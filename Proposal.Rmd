@@ -1,0 +1,40 @@
+---
+title: "Project Proposal (BDA 503 - Champions)"
+author: "Champions"
+output:
+  html_document:
+    toc: true 
+    toc_depth: 3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+---
+
+
+# Project Proposal
+
+We obtained mutual and pension fund data in Turkey between 09 November 2015 and 16 November 2020 from Turkey Electronic Fund Transfer System [tefas](https://www.tefas.gov.tr) Data  contains:
+
+  * Mutual Funds daily price data contains 389K rows and 7 variables. 
+  * Pension Funds daily price data contains 435K rows and 7 variables. 
+  * Mutual Funds daily asset allocation data contains 357K rows and 29 variables. 
+  * Pension  Funds daily asset allocation data contains 407K rows and 29 variables.
+  * Fund comparison data to retrieve umbrella fund type
+  * Financial benchmark data for alternative investments (i.e. inflation, currency, stock market, precious metal prices, term deposit interest rates, property prices, government bond returns) from CBRT, Turkstat, BIST, Yahoo!Finance.
+
+Variables of imported TEFAS data sets are as follows:
+
+<iframe  width="680" height="600" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vR5RraDyqXL1g6x7dxxk59Fp6pAfsKh3KdVzjNEfBvMhFa1u75dI0n8kMD_X5LohrTsTlRrqNdrv3pJ/pubhtml?gid=675334346&amp;single=true&amp;widget=true&amp;headers=false"></iframe>
+
+## Learning Objectives
+
+  * Importing, merging and cleaning multiple dirty data files.
+  * Processing imported data and conducting text mining to extract valuable data, categorize variables and generate insights. 
+  * Visualizing data with relevant variables with good styling.
+  * Conducting exploratory analysis on financial data.
+
+## Analysis Objectives
+
+  * Formulating and calculating best performance metrics.
+  * Comparing and visualizing performance of funds and also making comparison over alternative investment mediums.
+  * Creating an interactive Shiny app dashboard for fund customers to query, display and compare fund performance. 
+
+
