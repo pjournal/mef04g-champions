@@ -39,6 +39,8 @@ MAX_CONNECTION_YESTERDAY = MAX_CONNECTION - as.difftime(1, unit="days")
 analytical_df = clean_df %>% 
     transform(TOTAL = EMPTY + FULL, RATE = FULL/(EMPTY + FULL), ACTIVE_SUSPICION = ifelse(LAST_CONNECTION<MAX_CONNECTION_YESTERDAY, 0, 1))
 
+output_names = c("ID","Station No","Station Name","Is Station Active?","Available Bike Count","In-Usage Bike Count","Latitude","Longitude","Station Last Connection Time","Total Bike Count","Active Bike Rate","Active Analysis Result")
+
 # header board
 header <- dashboardHeader(
     title = 'Istanbul Metropolitan Municipality Bike Analysis'
@@ -89,7 +91,7 @@ server <- function(input, output, session) {
             )%>%
             addMarkers(lng = clean_df$LON, lat=clean_df$LAT, label=clean_df$STATION_NAME, popup=paste("Station No:",clean_df$STATION_NO,"Active:",clean_df$ACTIVE,"Empty:",clean_df$EMPTY,"Full:",clean_df$FULL,"Last Connection:",clean_df$LAST_CONNECTION,sep=" "))
     })
-    output$table = renderTable(analytical_df %>% filter(ACTIVE_SUSPICION==0) %>% transform(LAST_CONNECTION = as.character(LAST_CONNECTION)))
+    output$table = renderTable(analytical_df %>% filter(ACTIVE_SUSPICION==0) %>% transform(LAST_CONNECTION = as.character(LAST_CONNECTION)) %>% setNames(.,output_names))
     output$summary <- renderText({
         print("Here we can see that our data contains test values because they have latitude and longitude zero or null values")
     })
