@@ -1,4 +1,4 @@
-pti <- c("shiny","jsonlite", "zoo", "leaflet")
+pti <- c("shiny","shinydashboard","jsonlite", "zoo", "leaflet")
 pti <- pti[!(pti %in% installed.packages())]
 if(length(pti)>0){
     install.packages(pti)
@@ -8,6 +8,7 @@ if(length(pti)>0){
 ### Shiny starter code
 ##########
 library(shiny)
+library(shinydashboard)
 library(jsonlite)
 library(zoo)
 library(leaflet)
@@ -34,9 +35,11 @@ clean_df = setNames(data_list_df, clean_names) %>%
               LON = as.numeric(LON),
               STATION_NO = as.numeric(STATION_NO))
 
-clean_df
+MAX_CONNECTION = max(clean_df$LAST_CONNECTION)
+MAX_CONNECTION_YESTERDAY = MAX_CONNECTION - as.difftime(1, unit="days")
 
-print(str(clean_df))
+analytical_df = clean_df %>% 
+    transform(TOTAL = EMPTY + FULL, RATE = FULL/(EMPTY + FULL), ACTIVE_SUSPICION = ifelse(LAST_CONNECTION<MAX_CONNECTION_YESTERDAY, 0, 1))
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
