@@ -24,8 +24,6 @@ char_to_date = function(char_string){
     return(date_time_value)
 }
 
-print(str(data_list_df))
-
 clean_names = c("ID","STATION_NO","STATION_NAME","ACTIVE","EMPTY","FULL","LAT","LON","LAST_CONNECTION")
 clean_df = setNames(data_list_df, clean_names) %>%
     transform(LAST_CONNECTION = char_to_date(LAST_CONNECTION), 
@@ -41,34 +39,66 @@ MAX_CONNECTION_YESTERDAY = MAX_CONNECTION - as.difftime(1, unit="days")
 analytical_df = clean_df %>% 
     transform(TOTAL = EMPTY + FULL, RATE = FULL/(EMPTY + FULL), ACTIVE_SUSPICION = ifelse(LAST_CONNECTION<MAX_CONNECTION_YESTERDAY, 0, 1))
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-    
-    # Application title
-    titlePanel("Istanbul Metropolitan Municipality Bike Analysis"),
-    
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            checkboxInput("activeCheckbox", "Show only active stations", value = FALSE),
-            checkboxInput("testCheckbox", "Eliminate test values", value = FALSE)
+# header board
+header <- dashboardHeader(
+    title = 'Istanbul Metropolitan Municipality Bike Analysis'
+    # task list for status of data processing
+    , dropdownMenuOutput('task_menu'))
+
+# Side bar boardy
+sidebar <- dashboardSidebar(
+    sidebarMenu(
+        id = 'menu_tabs'
+        , menuItem('Map', tabName = 'mapISBIKE')
+        , menuItem('Is Active?', tabName = 'menu1')
+    )
+)
+
+# Body board
+body <- dashboardBody(
+    tabItems(
+        tabItem(
+            tabName = 'mapISBIKE'
+            , leafletOutput('map')
+            , verbatimTextOutput('summary')
         ),
-        
-        # Show a plot of the generated distribution
-        mainPanel(
-            leafletOutput("mymap")
+        tabItem(
+            tabName = 'menu1'
+            , tableOutput('table')
         )
     )
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
-    output$mymap <- renderLeaflet({
+# Shiny UI
+ui <- dashboardPage(
+    title = 'test',
+    dashboardHeader(),
+    sidebar,
+    body
+)
+
+server <- function(input, output, session) {
+    observe({
+        req(input$mydata)
+        updateTabItems(session, 'menu_tabs', 'mapISBIKE')
+    })
+    output$map <- renderLeaflet({
         leaflet() %>%
             addProviderTiles(providers$Stamen.TonerLite,
                              options = providerTileOptions(noWrap = TRUE)
             )%>%
             addMarkers(lng = clean_df$LON, lat=clean_df$LAT, label=clean_df$STATION_NAME, popup=paste("Station No:",clean_df$STATION_NO,"Active:",clean_df$ACTIVE,"Empty:",clean_df$EMPTY,"Full:",clean_df$FULL,"Last Connection:",clean_df$LAST_CONNECTION,sep=" "))
+    })
+    output$table = renderTable(analytical_df %>% filter(ACTIVE_SUSPICION==0) %>% transform(LAST_CONNECTION = as.character(LAST_CONNECTION)))
+    output$summary <- renderText({
+        print("Here we can see that our data contains test values because they have latitude and longitude zero or null values")
+    })
+    observe({
+        req(input$mydata)
+        proxy <- leafletProxy('map')
+        print(proxy$id)
+        proxy %>% 
+            setView(runif(1) * 30 +2, runif(1) * 30 + 2, 7)
     })
 }
 
