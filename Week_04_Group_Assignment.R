@@ -42,11 +42,13 @@ print(str(clean_df))
 ui <- fluidPage(
     
     # Application title
-    titlePanel("Movie Length and IMDB Scores"),
+    titlePanel("Istanbul Metropolitan Municipality Bike Analysis"),
     
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
+            checkboxInput("activeCheckbox", "Show only active stations", value = FALSE),
+            checkboxInput("testCheckbox", "Eliminate test values", value = FALSE)
         ),
         
         # Show a plot of the generated distribution
@@ -63,7 +65,7 @@ server <- function(input, output) {
             addProviderTiles(providers$Stamen.TonerLite,
                              options = providerTileOptions(noWrap = TRUE)
             )%>%
-            addMarkers(lng = clean_df$LON, lat=clean_df$LAT)
+            addMarkers(lng = clean_df$LON, lat=clean_df$LAT, label=clean_df$STATION_NAME, popup=paste("Station No:",clean_df$STATION_NO,"Active:",clean_df$ACTIVE,"Empty:",clean_df$EMPTY,"Full:",clean_df$FULL,"Last Connection:",clean_df$LAST_CONNECTION,sep=" "))
     })
 }
 
