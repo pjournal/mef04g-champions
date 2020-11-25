@@ -1,4 +1,4 @@
-pti <- c("shiny","shinydashboard","jsonlite", "zoo", "leaflet","kableExtra","DT")
+pti <- c("shiny","shinydashboard","jsonlite", "zoo", "leaflet","dplyr","DT")
 pti <- pti[!(pti %in% installed.packages())]
 if(length(pti)>0){
     install.packages(pti)
