@@ -16,7 +16,7 @@ library(dplyr)
 library(DT)
 
 # Prepare data
-raw_data = readRDS("C:\\data\\ISBIKE\\isbike_20201118.rds")
+raw_data = readRDS("isbike_20201118.rds")
 raw_df = fromJSON(raw_data)
 
 data_list_df = raw_df$dataList
