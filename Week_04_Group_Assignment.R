@@ -12,6 +12,7 @@ library(shinydashboard)
 library(jsonlite)
 library(zoo)
 library(leaflet)
+library(dplyr)
 
 # Prepare data
 raw_data = readRDS("C:\\data\\ISBIKE\\isbike_20201118.rds")
@@ -37,9 +38,9 @@ MAX_CONNECTION = max(clean_df$LAST_CONNECTION)
 MAX_CONNECTION_YESTERDAY = MAX_CONNECTION - as.difftime(1, unit="days")
 
 analytical_df = clean_df %>% 
-    transform(TOTAL = EMPTY + FULL, RATE = FULL/(EMPTY + FULL), ACTIVE_SUSPICION = ifelse(LAST_CONNECTION<MAX_CONNECTION_YESTERDAY, 0, 1))
+    transform(TOTAL = EMPTY + FULL, RATE = FULL/(EMPTY + FULL), ACTIVE_SUSPICION = ifelse(LAST_CONNECTION<MAX_CONNECTION_YESTERDAY, 0, 1), TEST_DATA = ifelse(LAT==0 | LON==0, 1, 0))
 
-output_names = c("ID","Station No","Station Name","Is Station Active?","Available Bike Count","In-Usage Bike Count","Latitude","Longitude","Station Last Connection Time","Total Bike Count","Active Bike Rate","Active Analysis Result")
+output_names = c("ID","Station No","Station Name","Is Station Active?","Available Bike Count","In-Usage Bike Count","Latitude","Longitude","Station Last Connection Time","Total Bike Count","Active Bike Rate","Active Analysis Result","Test Values?")
 
 # header board
 header <- dashboardHeader(
@@ -62,6 +63,8 @@ body <- dashboardBody(
         tabItem(
             tabName = 'mapISBIKE'
             , leafletOutput('map')
+            , checkboxInput("activeCheckbox", "Active/Inactive Stations", TRUE)
+            , checkboxInput("testCheckbox", "Non-Test Values", TRUE)
             , verbatimTextOutput('summary')
         ),
         tabItem(
@@ -85,11 +88,12 @@ server <- function(input, output, session) {
         updateTabItems(session, 'menu_tabs', 'mapISBIKE')
     })
     output$map <- renderLeaflet({
+        filtered_df = analytical_df %>% filter(ACTIVE_SUSPICION == ifelse(input$activeCheckbox,1,0), TEST_DATA == ifelse(input$testCheckbox,0,1))
         leaflet() %>%
             addProviderTiles(providers$Stamen.TonerLite,
                              options = providerTileOptions(noWrap = TRUE)
             )%>%
-            addMarkers(lng = clean_df$LON, lat=clean_df$LAT, label=clean_df$STATION_NAME, popup=paste("Station No:",clean_df$STATION_NO,"Active:",clean_df$ACTIVE,"Empty:",clean_df$EMPTY,"Full:",clean_df$FULL,"Last Connection:",clean_df$LAST_CONNECTION,sep=" "))
+            addMarkers(lng = filtered_df$LON, lat=filtered_df$LAT, label=filtered_df$STATION_NAME, popup=paste("Station No:",filtered_df$STATION_NO,"Active:",filtered_df$ACTIVE,"Empty:",filtered_df$EMPTY,"Full:",filtered_df$FULL,"Last Connection:",filtered_df$LAST_CONNECTION,sep=" "))
     })
     output$table = renderTable(analytical_df %>% filter(ACTIVE_SUSPICION==0) %>% transform(LAST_CONNECTION = as.character(LAST_CONNECTION)) %>% setNames(.,output_names))
     output$summary <- renderText({
