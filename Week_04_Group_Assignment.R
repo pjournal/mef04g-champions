@@ -45,7 +45,7 @@ analytical_df = clean_df %>%
 
 output_names = c("ID","Station No","Station Name","Is Station Active?","Available Bike Count","In-Usage Bike Count","Latitude","Longitude","Station Last Connection Time","Total Bike Count","Active Bike Rate","Active Analysis Result","Test Values?")
 
-#mapDataFrame = data.frame("MAP_NAME"=c(1,2,3,4,5),"MAP_CODE"=c(providers$Stamen.TonerLite, 'Esri.WorldImagery', providers$Stamen.Toner, providers$Esri.NatGeoWorldMap, providers$CartoDB.Positron))
+mapDataFrame = data.frame("MAP_NAME"=c('TonerLite','Satallite Image','Toner','National Geographic World Map','Positron'),"MAP_CODE"=c(providers$Stamen.TonerLite, 'Esri.WorldImagery', providers$Stamen.Toner, providers$Esri.NatGeoWorldMap, providers$CartoDB.Positron))
 
 # header board
 header <- dashboardHeader(
@@ -72,7 +72,7 @@ body <- dashboardBody(
             leafletOutput('map'),
             checkboxInput("activeCheckbox", "Active/Inactive Stations", TRUE),
             checkboxInput("testCheckbox", "Non-Test Values", TRUE),
-            selectInput('mapType', 'Map Type', c(providers$Stamen.TonerLite, 'Esri.WorldImagery', providers$Stamen.Toner, providers$Esri.NatGeoWorldMap, providers$CartoDB.Positron)),
+            selectInput('mapType', 'Map Type', mapDataFrame$MAP_NAME),
             sliderInput("emptyCount",
                         "Empty Bicycle Number",
                         min = min(analytical_df$EMPTY,na.rm=TRUE),
@@ -130,10 +130,13 @@ server <- function(input, output, session) {
         updateTabItems(session, 'menu_tabs', 'mapISBIKE')
     })
     output$map <- renderLeaflet({
+        providerTileString = mapDataFrame %>% 
+            filter(MAP_NAME == input$mapType) %>% 
+            .$MAP_CODE
         filtered_df = analytical_df %>% 
             filter(ACTIVE_SUSPICION == ifelse(input$activeCheckbox,1,0), TEST_DATA == ifelse(input$testCheckbox,0,1), EMPTY >= input$emptyCount[1], EMPTY <= input$emptyCount[2])
         leaflet() %>%
-            addProviderTiles(input$mapType)%>%
+            addProviderTiles(providerTileString)%>%
             addMarkers(lng = filtered_df$LON, lat=filtered_df$LAT, label=filtered_df$STATION_NAME, popup=paste("Station No:",filtered_df$STATION_NO,"Active:",filtered_df$ACTIVE,"Empty:",filtered_df$EMPTY,"Full:",filtered_df$FULL,"Last Connection:",filtered_df$LAST_CONNECTION,sep=" "))
     })
     output$isActiveTable = DT::renderDT(
