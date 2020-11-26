@@ -1,4 +1,4 @@
-pti <- c("shiny","shinydashboard","jsonlite", "zoo", "leaflet","dplyr","DT")
+pti <- c("shiny","shinydashboard","jsonlite", "zoo", "leaflet","dplyr","DT","OneR","tidyverse")
 pti <- pti[!(pti %in% installed.packages())]
 if(length(pti)>0){
     install.packages(pti)
@@ -14,6 +14,8 @@ library(zoo)
 library(leaflet)
 library(dplyr)
 library(DT)
+library(OneR)
+library(tidyverse)
 
 # Prepare data
 raw_data = readRDS("isbike_20201118.rds")
@@ -39,11 +41,11 @@ MAX_CONNECTION = max(clean_df$LAST_CONNECTION)
 MAX_CONNECTION_YESTERDAY = MAX_CONNECTION - as.difftime(1, unit="days")
 
 analytical_df = clean_df %>% 
-    transform(TOTAL = EMPTY + FULL, RATE = round(FULL/(EMPTY + FULL),2), ACTIVE_SUSPICION = ifelse(LAST_CONNECTION<MAX_CONNECTION_YESTERDAY, 0, 1), TEST_DATA = ifelse(LAT==0 | LON==0, 1, 0))
+    transform(TOTAL = EMPTY + FULL, RATE = as.integer(floor((FULL/(EMPTY + FULL))*100)), ACTIVE_SUSPICION = ifelse(LAST_CONNECTION<MAX_CONNECTION_YESTERDAY, 0, 1), TEST_DATA = ifelse(LAT==0 | LON==0, 1, 0), TOTAL_BIN = bin((EMPTY + FULL), nbins = 3, labels = c("small", "medium", "large")))
 
 output_names = c("ID","Station No","Station Name","Is Station Active?","Available Bike Count","In-Usage Bike Count","Latitude","Longitude","Station Last Connection Time","Total Bike Count","Active Bike Rate","Active Analysis Result","Test Values?")
 
-mapDataFrame = data.frame("MAP_NAME"=c(1,2,3,4,5),"MAP_CODE"=c(providers$Stamen.TonerLite, 'Esri.WorldImagery', providers$Stamen.Toner, providers$Esri.NatGeoWorldMap, providers$CartoDB.Positron))
+#mapDataFrame = data.frame("MAP_NAME"=c(1,2,3,4,5),"MAP_CODE"=c(providers$Stamen.TonerLite, 'Esri.WorldImagery', providers$Stamen.Toner, providers$Esri.NatGeoWorldMap, providers$CartoDB.Positron))
 
 # header board
 header <- dashboardHeader(
@@ -58,6 +60,7 @@ sidebar <- dashboardSidebar(
         , menuItem('Map', tabName = 'mapISBIKE')
         , menuItem('Active Bike Station Suspicion', tabName = 'isActive')
         , menuItem('Most Frequently Used Stations', tabName = 'mostFreqStations')
+        , menuItem('Capacity Plot', tabName = 'capacityPlot')
     )
 )
 
@@ -72,8 +75,8 @@ body <- dashboardBody(
             selectInput('mapType', 'Map Type', c(providers$Stamen.TonerLite, 'Esri.WorldImagery', providers$Stamen.Toner, providers$Esri.NatGeoWorldMap, providers$CartoDB.Positron)),
             sliderInput("emptyCount",
                         "Empty Bicycle Number",
-                        min = min(analytical_df$EMPTY),
-                        max = max(analytical_df$EMPTY),
+                        min = min(analytical_df$EMPTY,na.rm=TRUE),
+                        max = max(analytical_df$EMPTY,na.rm=TRUE),
                         value = c(min(analytical_df$EMPTY),max(analytical_df$EMPTY)),
                         step = 1,
                         ticks = FALSE,
@@ -87,6 +90,28 @@ body <- dashboardBody(
         tabItem(
             tabName = 'mostFreqStations',
             DT::DTOutput('mostFreqStationsTable')
+        ),
+        tabItem(
+            tabName = 'capacityPlot',
+            plotOutput('capacityPlot'),
+            checkboxInput("cpactiveCheckbox", "Active/Inactive Stations", TRUE),
+            checkboxInput("cptestCheckbox", "Non-Test Values", TRUE),
+            sliderInput("cpemptyCount",
+                        "Empty Bicycle Number",
+                        min = min(analytical_df$EMPTY),
+                        max = max(analytical_df$EMPTY),
+                        value = c(min(analytical_df$EMPTY),max(analytical_df$EMPTY)),
+                        step = 1,
+                        ticks = FALSE,
+                        sep = ""),
+            sliderInput("cpRate",
+                        "Rate",
+                        min = 0,
+                        max = 100,
+                        value = c(0,100),
+                        step = 5,
+                        ticks = FALSE,
+                        sep = "")
         )
     )
 )
@@ -125,6 +150,15 @@ server <- function(input, output, session) {
             filter(ACTIVE_SUSPICION == 1, TEST_DATA == 0) %>% 
             arrange(desc(RATE))
     )
+    output$capacityPlot = renderPlot({
+        filtered_df = analytical_df %>%
+            filter(ACTIVE_SUSPICION == ifelse(input$cpactiveCheckbox,1,0), TEST_DATA == ifelse(input$cptestCheckbox,0,1), EMPTY >= input$cpemptyCount[1], EMPTY <= input$cpemptyCount[2], RATE >= input$cpRate[1], RATE<= input$cpRate[2])
+        ggplot(filtered_df, aes(x=RATE, y=EMPTY, color=TOTAL_BIN, size=TOTAL_BIN)) + 
+            geom_point() + 
+            expand_limits(y=0) + 
+            ggtitle("Comparison over daily max and min values of Sep'20") + 
+            guides(x = guide_axis(angle = 90))
+    })
     observe({
         req(input$mydata)
         proxy <- leafletProxy('map')
