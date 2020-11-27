@@ -1,0 +1,303 @@
+---
+title: "Champions Project-CK work"
+author: "Cagatay Kiyici"
+date: "19 11 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Sys.setenv(LANG = "en")
+library(tidyverse)
+library(lubridate)
+#library(readxl)
+#library(writexl)
+#library(WriteXLS)
+
+
+```
+
+Read imported data set
+```{r}
+df_all = readRDS("df_all.rds") %>% glimpse()
+
+```
+
+
+ unique  number of funds 
+
+```{r}
+
+df_all %>% distinct(code) %>% summarise(count=n())
+
+```
+
+Unique number of funds by types
+```{r}
+
+df_all %>% group_by(fund_type)%>%  distinct(code) %>% summarise(count=n())
+
+```
+
+Unique number of funds by types and categories
+```{r}
+
+df_all %>% group_by(fund_type, category)%>%  distinct(code) %>% summarise(count=n())
+
+```
+A mutual fund has no category, it is FPR. This fund category was not in the data set
+
+
+```{r}
+
+df_all %>% filter(is.na(category)==TRUE)%>% distinct(code)%>% glimpse()
+
+```
+
+
+Let's update our dataset and fix this missing value, this fund seems to be from "Serbest Şemsiye Fonu" / "Hedge Umbrella Fund" (we looked up this fund from tefas.gov.tr web site)
+
+```{r}
+
+df_all=df_all %>% mutate(category=ifelse(code=="FPR","Hedge Umbrella Fund",category))%>%glimpse()
+
+```
+
+
+
+Are fund names unique among fund codes? Are there more than 1 name for a fund code? Let's check them: great there is no problem
+
+```{r}
+
+df_all %>% group_by(code, name)%>%  distinct(code) %>% summarise(count=n())%>%filter(count>1)%>%arrange(desc(count))
+
+
+```
+
+
+
+
+
+Date coverage of data: max length of our data set ise 1834 days with 1262 data points. No fund data during weekends and official holidays.
+```{r}
+
+df_all %>% distinct(date) %>% summarise(count=n(), latest=max(date), earliest=min(date), length=max(date)-min(date))
+
+
+```
+
+
+total number of data points and date coverage for each fund
+
+```{r}
+
+df_all %>% group_by(code, fund_type) %>% summarise(count=n(), latest=max(date), earliest=min(date), length=max(date)-min(date))%>% arrange(count)
+
+
+```
+
+
+
+What is the distribution of fund data time length by years?136 funds has less than 1 years data
+
+```{r}
+
+df_all %>% group_by(code, fund_type) %>% summarise(count=n(), latest=max(date), earliest=min(date), length=max(date)-min(date))%>% arrange(count) %>% group_by(length_cut=floor(length/365))%>% summarise(countcuts=n())%>% arrange(length_cut)#%>%glimpse()
+
+```
+
+How many funds have full 5 years of data coverage? 469 funds
+
+
+```{r}
+
+df_all %>% group_by(code, fund_type) %>% summarise(count=n(), latest=max(date), earliest=min(date), length=max(date)-min(date))%>%arrange(length) %>% filter(length>52*7*5)
+
+
+```
+
+
+
+
+
+
+Are there any funds which are not active any more?
+
+992, all funds have up to date price data. All seems active
+
+
+```{r}
+df_all %>% filter(date==max(date))%>%glimpse() 
+
+```
+
+
+Among last day's data, 72 funds price data is either 0 or 0 number of shares. They seem passive funds which should not be included our performance analysis
+```{r}
+df_inactive = df_all %>% filter(date==max(date) & (price==0 | shares==0))%>%glimpse() 
+
+```
+
+
+
+#Were they active before? Let's just filter these 72 funds and their historical data, there are 19035 rows of data
+
+
+```{r}
+df_inactive_history= inner_join(df_all,df_inactive,by="code")
+df_inactive_history%>%glimpse()
+
+
+```
+
+
+Let's grop bu zero and non zero price or share data, it seems almost 2/3 of their data has zero. We should not include these enreliable and obsolete fund data
+
+```{r}
+df_inactive_history%>%mutate(zeros=ifelse(price.x==0 |shares.x==0,"zero","other"))%>% group_by(zeros)%>%summarise(count=n())
+
+```
+
+
+
+
+
+Let's get rid of them.901894-19035=882859 rows of data left, that's correct!
+
+```{r}
+df_clean=anti_join(df_all,df_inactive,by="code")
+df_clean%>%glimpse()
+
+
+```
+
+
+
+
+Let's check whether we have any missing data or zero or very small numbers for the fund prices or shares or total values among remaining funds
+
+
+
+Let's chech any other missing values (or illegal values as zeros) in other fields?
+
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+Let's add some additional data to better classify funds. 
+
+Pension Funds which has OKS in their names are "Otomatik Katılım sistemi" funds. these are special funds forf Automatic Participation system pension contracts.
+
+Pension funds which have "katılım" or "participation" either in their names or category are special funds which only  invest in securities without interest returns.
+
+Pension funds which have "katkı", "devlet katkısı", "contribution" or "state contribution" either in their names or category are special funds which government contributions are invested.
+
+
+```{r}
+
+#df_clean%>%mutate(OKS=grepl(" OKS ",name))%>%distinct(name,OKS)%>%arrange(OKS)%>%relocate(OKS,name) #test
+#df_clean%>%mutate(participation=(grepl(" KATILIM ",name)|grepl(" participation  ",category)))%>%distinct(name,participation,category)%>%arrange(participation)%>%relocate(participation,category,name)#test
+#df_clean%>%mutate(contribution=(grepl(" KATKI ",name)|grepl(" contribution ",category)))%>%distinct(name,contribution,category)%>%arrange(contribution)%>%relocate(contribution,category,name)#test
+
+df_clean=df_clean%>%mutate(contribution=(grepl(" KATKI ",name)|grepl(" contribution ",category)), participation=(grepl(" KATILIM ",name)|grepl(" participation  ",category)), OKS=grepl(" OKS ",name))%>%relocate(OKS, participation, contribution)
+
+
+```
+
+
+
+```{r}
+
+df_clean
+
+```
+
+
+
+```{r}
+
+#saveRDS(df_clean,"df_clean.rds")
+
+```
+
+
+
+```{r}
+
+
+
+```
+
+
+
+```{r}
+
+
+
+```
+
+
+
+```{r}
+
+
+
+```
+
+
+
+```{r}
+
+
+
+```
+
+
+
+```{r}
+
+
+
+```
+
+
+
+```{r}
+
+
+
+```
+
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
