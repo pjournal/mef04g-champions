@@ -60,7 +60,7 @@ sidebar <- dashboardSidebar(
         , menuItem('Map', tabName = 'mapISBIKE')
         , menuItem('Active/Inactive Bike Stations', tabName = 'isActive')
         , menuItem('Most Frequently Used Stations', tabName = 'mostFreqStations')
-        , menuItem('Capacity Plot', tabName = 'capacityPlot')
+        , menuItem('Capacity Utilization Report', tabName = 'capacityPlot')
     )
 )
 
@@ -70,7 +70,7 @@ body <- dashboardBody(
         tabItem(
             tabName = 'mapISBIKE',
             leafletOutput('map'),
-            checkboxInput("activeCheckbox", "Active/Inactive Stations", TRUE),
+            checkboxInput("activeCheckbox", "Active Stations", TRUE),
             checkboxInput("testCheckbox", "Non-Test Values", TRUE),
             selectInput('mapType', 'Map Type', mapDataFrame$MAP_NAME),
             sliderInput("emptyCount",
@@ -80,8 +80,7 @@ body <- dashboardBody(
                         value = c(min(analytical_df$EMPTY),max(analytical_df$EMPTY)),
                         step = 1,
                         ticks = FALSE,
-                        sep = ""),
-            verbatimTextOutput('summary')
+                        sep = "")
         ),
         tabItem(
             tabName = 'isActive',
@@ -94,7 +93,7 @@ body <- dashboardBody(
         tabItem(
             tabName = 'capacityPlot',
             plotOutput('capacityPlot'),
-            checkboxInput("cpactiveCheckbox", "Active/Inactive Stations", TRUE),
+            checkboxInput("cpactiveCheckbox", "Active Stations", TRUE),
             checkboxInput("cptestCheckbox", "Non-Test Values", TRUE),
             sliderInput("cpemptyCount",
                         "Empty Bicycle Number",
@@ -145,9 +144,6 @@ server <- function(input, output, session) {
             transform(LAST_CONNECTION = as.character(LAST_CONNECTION)) %>% 
             setNames(.,output_names)
     )
-    output$summary <- renderText({
-        print("Here we can see that our data contains test values because they have latitude and longitude zero or null values")
-    })
     output$mostFreqStationsTable = DT::renderDT(
         analytical_df %>% 
             filter(ACTIVE_SUSPICION == 1, TEST_DATA == 0) %>% 
