@@ -43,7 +43,7 @@ MAX_CONNECTION_YESTERDAY = MAX_CONNECTION - as.difftime(1, unit="days")
 analytical_df = clean_df %>% 
     transform(TOTAL = EMPTY + FULL, RATE = as.integer(floor((FULL/(EMPTY + FULL))*100)), ACTIVE_SUSPICION = ifelse(LAST_CONNECTION<MAX_CONNECTION_YESTERDAY, 0, 1), TEST_DATA = ifelse(LAT==0 | LON==0, 1, 0), TOTAL_BIN = bin((EMPTY + FULL), nbins = 3, labels = c("small", "medium", "large")))
 
-output_names = c("ID","Station No","Station Name","Is Station Active?","Available Bike Count","In-Usage Bike Count","Latitude","Longitude","Station Last Connection Time","Total Bike Count","Active Bike Rate","Active Analysis Result","Test Values?")
+output_names = c("ID","Station No","Station Name","Is Station Active","Available Bike Count","In-Usage Bike Count","Latitude","Longitude","Station Last Connection Time","Total Bike Count","Active Bike Percentage","Fresh Data(In Last 24 Hours)","Missing Geolocation Data","Station Segment")
 
 mapDataFrame = data.frame("MAP_NAME"=c('TonerLite','Satallite Image','Toner','National Geographic World Map','Positron'),"MAP_CODE"=c(providers$Stamen.TonerLite, 'Esri.WorldImagery', providers$Stamen.Toner, providers$Esri.NatGeoWorldMap, providers$CartoDB.Positron))
 
@@ -58,7 +58,7 @@ sidebar <- dashboardSidebar(
     sidebarMenu(
         id = 'menu_tabs'
         , menuItem('Map', tabName = 'mapISBIKE')
-        , menuItem('Active Bike Station Suspicion', tabName = 'isActive')
+        , menuItem('Active/Inactive Bike Stations', tabName = 'isActive')
         , menuItem('Most Frequently Used Stations', tabName = 'mostFreqStations')
         , menuItem('Capacity Plot', tabName = 'capacityPlot')
     )
@@ -159,7 +159,7 @@ server <- function(input, output, session) {
         ggplot(filtered_df, aes(x=RATE, y=EMPTY, color=TOTAL_BIN, size=TOTAL_BIN)) + 
             geom_point() + 
             expand_limits(y=0) + 
-            ggtitle("Comparison over daily max and min values of Sep'20") + 
+            ggtitle("Capacity Utilization Rate") + 
             guides(x = guide_axis(angle = 90))
     })
     observe({
