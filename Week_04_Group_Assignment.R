@@ -28,6 +28,15 @@ char_to_date = function(char_string){
     return(date_time_value)
 }
 
+normalizeDataFrame = function(dataframe_input){
+    output_names = c("ID","Station No","Station Name","Is Station Active","Available Bike Count","In-Usage Bike Count","Latitude","Longitude","Station Last Connection Time","Total Bike Count","Active Bike Percentage","Fresh Data(In Last 24 Hours)","Missing Geolocation Data","Station Segment")
+    return(
+        dataframe_input%>%
+            setNames(.,output_names)%>%
+            select(2,3,14,4,10,5,6,11,12,13,9,7,8)
+           )
+}
+
 clean_names = c("ID","STATION_NO","STATION_NAME","ACTIVE","EMPTY","FULL","LAT","LON","LAST_CONNECTION")
 clean_df = setNames(data_list_df, clean_names) %>%
     transform(LAST_CONNECTION = char_to_date(LAST_CONNECTION), 
@@ -58,7 +67,7 @@ sidebar <- dashboardSidebar(
     sidebarMenu(
         id = 'menu_tabs'
         , menuItem('Map', tabName = 'mapISBIKE')
-        , menuItem('Active/Inactive Bike Stations', tabName = 'isActive')
+        , menuItem('Inactive Bike Stations', tabName = 'isActive')
         , menuItem('Most Frequently Used Stations', tabName = 'mostFreqStations')
         , menuItem('Capacity Utilization Report', tabName = 'capacityPlot')
     )
@@ -139,15 +148,12 @@ server <- function(input, output, session) {
             addMarkers(lng = filtered_df$LON, lat=filtered_df$LAT, label=filtered_df$STATION_NAME, popup=paste("Station No:",filtered_df$STATION_NO,"Active:",filtered_df$ACTIVE,"Empty:",filtered_df$EMPTY,"Full:",filtered_df$FULL,"Last Connection:",filtered_df$LAST_CONNECTION,sep=" "))
     })
     output$isActiveTable = DT::renderDT(
-        analytical_df %>% 
-            filter(ACTIVE_SUSPICION==0) %>% 
-            transform(LAST_CONNECTION = as.character(LAST_CONNECTION)) %>% 
-            setNames(.,output_names)
+        normalizeDataFrame(analytical_df %>% filter(ACTIVE_SUSPICION==0))
     )
     output$mostFreqStationsTable = DT::renderDT(
-        analytical_df %>% 
+        normalizeDataFrame(analytical_df %>% 
             filter(ACTIVE_SUSPICION == 1, TEST_DATA == 0) %>% 
-            arrange(desc(RATE))
+            arrange(desc(RATE)))
     )
     output$capacityPlot = renderPlot({
         filtered_df = analytical_df %>%
