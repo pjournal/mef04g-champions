@@ -1,0 +1,435 @@
+---
+title: "TEFAS Fund Data Clean & Transform Process"
+author: "MEF BDA 503 - Champions Project Group"
+date: "29 11 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Sys.setenv(LANG = "en")
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(stringr)
+library(stringi)
+
+#library(writexl)
+#library(WriteXLS)
+
+
+```
+
+Read imported data set. We have 901894 rows and 35 columns in imported dataset.
+```{r}
+df_import = readRDS("df_import.rds") %>% glimpse()
+
+```
+
+
+ unique  number of funds : 993
+
+```{r}
+
+df_import %>% distinct(code) %>% summarise(count=n())
+
+```
+
+Unique number of funds by types and categories
+```{r}
+
+df_import %>% group_by(fund_type, category)%>%  distinct(code) %>% summarise(count=n())
+
+```
+A mutual fund has no category, it is "FPR". This fund category was not in the data set
+
+This fund has not any data, it should be an obsolete entry. 
+```{r}
+
+df_import %>% filter(is.na(category)==TRUE)%>%arrange(price)
+
+```
+
+
+Let's update our dataset and remove this fund altogether. 901894-488=901406 rows left
+
+```{r}
+
+df_import=df_import %>% filter(code!="FPR")%>%glimpse()
+
+```
+
+Are any other NA values left in fund code, name or category fields? Let's find out.
+
+fund codes OK
+```{r}
+
+df_import %>% filter(is.na(code)==TRUE)
+
+
+```
+
+2 rows missing fund names, but their data seems obsolete too. 
+
+```{r}
+df_import %>% filter(is.na(name)==TRUE)
+
+
+```
+
+We need to remove them from dataset
+901406-2=901404 rows left
+
+```{r}
+
+df_import=df_import %>% filter(is.na(name)==FALSE)%>%glimpse()
+
+```
+
+Let's check price, no NA values
+
+```{r}
+df_import %>% filter(is.na(price)==TRUE)
+
+
+
+```
+
+Let's check shares, no NA values
+
+```{r}
+df_import %>% filter(is.na(shares)==TRUE)
+
+
+
+```
+
+Let's check dates, no NA values, no 0 values
+
+```{r}
+df_import %>% filter(is.na(date)==TRUE)
+
+df_import %>% filter(date==0)
+
+
+```
+
+
+Are there any 0 price or share values? There are 68109 rows with 0 values
+
+```{r}
+df_import%>%filter(price==0|shares==0|is.na(price)|is.na(shares))
+
+
+```
+Removed 68109 rows with obsolete entries, 833295 rows left
+
+```{r}
+df_import=df_import%>%filter(price>0 & shares>0 &!is.na(price)&!is.na(shares))%>%glimpse()
+
+
+
+```
+
+
+
+total number of funds decreased from 993 to 952 after removing obsolete data rows.
+```{r}
+df_import%>%distinct(code)
+
+```
+
+
+
+
+Are fund names unique among fund codes? Are there more than 1 name for a fund code? Let's check them: great there is no problem
+
+```{r}
+
+df_import %>% group_by(code, name)%>%  distinct(code) %>% summarise(count=n())%>%filter(count>1)%>%arrange(desc(count))
+
+
+```
+
+
+
+
+
+
+Are there any funds which are not active any more? Let's check how many funds have data in the last day of our data set?
+
+Out of the 952, only 920  funds have up to date price data. 
+
+
+```{r}
+df_import %>% filter(date==max(date))%>%glimpse() 
+
+```
+
+
+Let's find these 32 funds, they have 6657 rows of data
+
+```{r}
+
+df_uptodatefunds=df_import %>% filter(date==max(date))%>%distinct(code)#%>%glimpse()
+df_inactive=anti_join(df_import,df_uptodatefunds)%>%glimpse()
+
+
+```
+
+
+
+Let's check the total number of data points and date coverage for these funds. These are inactive funds all from umbreaall hedge funds
+
+```{r}
+
+df_inactive %>% group_by(code, fund_type, category) %>% summarise(count=n(), latest=max(date), earliest=min(date), length=max(date)-min(date))%>% arrange(desc(latest))
+
+
+```
+
+
+
+
+
+THese are all "Serbest"/"hedge fund" types that are only accessible by "niteliklik yatırımcı"/"qualified investor" mostly institutional investors. This subset  don't have reliable data and behave very different than typical mutual funds which are accessible to general public. We will remove the ones with unreliable data from our analysis data set.
+
+When we remove 6657 rows from our data set, we now have 826638 rows
+
+```{r}
+
+df_import=semi_join(df_import,df_uptodatefunds)%>%glimpse()
+
+
+```
+
+
+
+We need to add some additional data to better classify funds in our future analysis.
+
+86 Pension Funds which has OKS in their names are "Otomatik Katılım sistemi" funds. these are special funds forf Automatic Participation system pension contracts. 
+
+165 funds which have "katılım" or "participation" either in their names or category are special funds which only  invest in securities without interest returns.
+
+28 Pension funds which have "katkı", "devlet katkısı", "contribution" or "state contribution" either in their names or category are special funds which government contributions are invested.
+
+
+```{r}
+
+df_import=df_import%>%mutate(contribution=(grepl(" KATKI ",name)|grepl(" contribution ",category)), participation=(grepl(" KATILIM ",name)|grepl(" participation  ",category)), OKS=grepl(" OKS ",name))%>%relocate(OKS, participation, contribution)%>%glimpse()
+
+
+```
+
+
+```{r}
+df_import%>%group_by(OKS,participation,contribution)%>%distinct(code)%>%summarize(n())
+
+
+```
+
+
+
+
+We don't have the names or ids of portfolio management companies in our data set. We need to parse their names from th "name" field. We can also simplify the long names of the funds which would help us during visualisation stage
+
+There are 920 unique funds.
+
+```{r}
+df_import%>%distinct(name)
+
+
+```
+
+From the TEFAS web site, names of the companies are inside the html code of the page. We just copied them to an excel file. 
+Import the names of the owner companies. 
+
+
+```{r}
+df_companies=read_excel("companies.xlsx")
+df_companies%>%arrange(company_name)
+
+
+```
+There are 53 companies. 36 of them mutual funds, and 17 of them are pension fund companies.
+
+
+```{r}
+
+df_companies%>%group_by(company_type)%>%summarise(n())
+
+
+```
+
+
+TÜRKİYE HAYAT VE EMEKLİLİK A.Ş. has triple entries.
+```{r}
+
+df_companies%>%group_by(company_name)%>%summarise(count=n())%>%arrange(desc(count))
+
+
+```
+
+
+TURKIYE HAYAT VE EMEKLILIK A.S. is the merger of 3 government owned Pension companies:
+ZEM: Ziraat Emeklilik 
+VEM: Vakif Emeklilik
+HEM:Halk Emeklilik
+
+For our initial analysis we will combine them under the code: "TEM"
+During our advanced phases of our analysis if we decide to dig deeper to compare performances of the original pension fund companies we may look for ways to differentiate them.In the fund names, ZEM, VEM and HEM are included, we can transform them if we need to. 
+
+
+```{r}
+df_companies%>%filter(company_name=="TÜRKİYE HAYAT VE EMEKLİLİK A.Ş.")
+
+
+
+```
+```{r}
+df_import%>%distinct(name)%>%filter(grepl("VEM|ZEM|HEM",name))
+
+
+
+```
+
+Let's remove rows with VEM and ZEM then change HEM as TEM. Now we have 51 unique companies and codes
+```{r}
+
+df_companies=df_companies%>%filter(company_code!="ZEM" & company_code!="VEM")%>%mutate(company_code=ifelse(company_code=="HEM","TEM",company_code))
+
+df_companies%>%arrange(company_code)
+
+```
+
+
+
+
+
+
+Can we parse the names of the companies from fund names? Data seems messy, names on fund name fields and company name fields are not consistent.
+
+```{r}
+df_import%>%distinct(name)%>%filter(!grepl("A.Ş.|AŞ|PORTFÖY",name))
+
+
+```
+
+Let's get the starting X characters to be able to parse them by company name and matche them with company list. It seems sometimes "İ" and sometime "I" used in the same name.
+```{r}
+
+df_import%>%distinct(name)%>%mutate(name_start=str_sub(name,1,10))%>%distinct(name_start)%>%arrange(name_start)
+
+```
+
+Get rid of "İ", "I" duplications and other anoying stuff by changing all turkish characters to lating ascii. We used stri_trans_general function of stringi package.
+
+```{r}
+
+df_import=df_import%>%mutate(name=stri_trans_general(name,"latin-ascii"))
+
+df_companies=df_companies%>%mutate(company_name=stri_trans_general(company_name,"latin-ascii"))
+
+
+
+```
+
+Let's try again to extract first several characters to see if we can match them. It seems 9 characters is the sweet spot with 54 just a few above unique number 51
+```{r}
+
+for (i in 1:25) {
+  
+
+
+df_temp=df_import%>%distinct(name)%>%mutate(name_start=str_sub(name,1,i))%>%distinct(name_start)
+print(paste("First ", i,"characters. Distinct counts: ",count(df_temp)[[1,1]]))
+}
+
+
+
+```
+
+
+First 9 characters also sufficient to diferentiate 51 unique ompanies
+```{r}
+
+for (i in 1:25) {
+  
+
+
+df_temp2=df_companies%>%distinct(company_name)%>%mutate(name_start=str_sub(company_name,1,i))%>%distinct(name_start)
+print(paste("First ", i,"characters. Distinct counts: ",count(df_temp2)[[1,1]]))
+}
+
+
+
+```
+
+
+There are few unmatches, but it is quite obvious how to align them to our data when we merge them on df_companies
+```{r}
+df_import_9=df_import%>%distinct(name)%>%mutate(name_start=str_sub(name,1,9))%>%distinct(name_start)%>%arrange(name_start)%>%glimpse()
+
+
+
+df_companies=df_companies%>%mutate(name_start=str_sub(company_name,1,9))%>%arrange(name_start)%>%glimpse()
+
+df_companies=full_join(df_import_9,df_companies, by="name_start")%>%arrange(name_start)
+df_companies
+
+```
+AEGON EM = AEGON EME=ANM (spaces!)
+BEREKET= BEREKET E=ASH (spaces!)
+
+AZIMUT PY = AZIMUT PO = GPO
+HSBC PYS = HSBC PORT=HPY
+CIGNA FIN=CIGNA SAG=FEM
+
+
+```{r}
+df_companies=df_companies%>%mutate(company_code=ifelse(grepl("AEGON",name_start),"ANM",company_code), company_name=ifelse(grepl("AEGON",name_start),"AEGON EMEKLILIK VE HAYAT A.S.",company_name), company_type=ifelse(grepl("AEGON",name_start),"pension",company_type) )%>%mutate(company_code=ifelse(grepl("AZIMUT",name_start),"GPO",company_code), company_name=ifelse(grepl("AZIMUT",name_start),"AZIMUT PORTFOY YONETIMI A.S.",company_name), company_type=ifelse(grepl("AZIMUT",name_start),"mutual",company_type) )%>%mutate(company_code=ifelse(grepl("HSBC",name_start),"HPY",company_code), company_name=ifelse(grepl("HSBC",name_start),"HSBC PORTFOY YONETIMI A.S.",company_name), company_type=ifelse(grepl("HSBC",name_start),"mutual",company_type) )%>%mutate(company_code=ifelse(grepl("CIGNA",name_start),"FEM",company_code), company_name=ifelse(grepl("CIGNA",name_start),"CIGNA SAGLIK HAYAT VE EMEKLILIK A.S.",company_name), company_type=ifelse(grepl("CIGNA",name_start),"pension",company_type) )%>%mutate(company_code=ifelse(grepl("BEREKET",name_start),"ASH",company_code), company_name=ifelse(grepl("BEREKET",name_start),"BEREKET EMEKLILIK VE HAYAT A.S.",company_name), company_type=ifelse(grepl("BEREKET",name_start),"pension",company_type) )%>%arrange(name_start)
+
+df_companies
+
+```
+
+Now add this company name and code information to our main data set.  826638 rows are the same as before join operation
+
+```{r}
+df_import=left_join(df_import%>%mutate(name_start=str_sub(name,1,9)),df_companies, by="name_start")%>%select(-name_start, -company_type)%>%glimpse()
+
+
+```
+
+
+It matched perfectly, no NA in company related fields.
+```{r}
+print(df_import%>%filter(is.na(company_name)))
+print(df_import%>%filter(is.na(company_code)))
+
+```
+
+We have completed one more milestone. Let's export final, clean dataframe as RDS for exploratory analysis.
+
+
+```{r}
+
+saveRDS(df_import,"df_clean.rds")
+
+```
+
+We have uploaded the df_clean.rds file and other material for this milestone to the google drive. You can review them from this link:
+https://drive.google.com/drive/folders/1SJPoQqPOXHdLEUReML9zpWw7NaNrcJUY?usp=sharing 
+
+
+
+
+
+
+
+
+
+
+
+
+
