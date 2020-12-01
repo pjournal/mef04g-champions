@@ -17,7 +17,7 @@
 
 [Exploratory Analysis](exploratory-analysis.html)
 
-[Exploratory Analysis](EDA.html)
+[EDA](EDA.html)
 
 
 ## Week 04 Group Assignment - ISBike
