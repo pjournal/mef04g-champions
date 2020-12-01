@@ -16,9 +16,52 @@ library(writexl)
 
 ```
 
+# Brief Description of Data Set & Data Acquisition Process
+Turkey Electronic Fund Trading Platform (TEFAS) is the centralized electronic transaction environment for mutual and pension funds in Turkey. TEFAS is run by Takasbank which provides the central clearing, settlement and custody services for all types of capital markets and exchanges in Turkey. TEFAS also provides extensive 5 years of historical data for traded funds.In November 2020, total trading volume of the platform was 14.64 Billion TRY (http://fundturkey.com.tr/IstatistikiRaporlar/ToplamIslemHacmi.aspx). 
+
+At the initial import we have gathered 5 years data of 693 funds founded by 51 companies, 901893 rows and 35 columns. 
+
+## Source Data
+
+We have downloaded historical  data of funds from https://www.tefas.gov.tr/TarihselVeriler.aspx page. 
+
+Pension funds and mutual funds are downloaded separately.
+
+Due to the restrictions of the platform and sizes of data files, we had to query in 6 files.
+
+Files we in xlsx format, each have 2 sheets:
+* Genel Bilgiler: date, unique fund code, fund names, daily price, total value, shares and investors data. Total 7 columns.
+* Portföy Dağılımı: date, unique fund code, fund names and daily portfolio allocation of each fund. These are daily percentages of 26  asset types. Total 29 columns.
+
+We spoted significant data coverage differences between English and Turkish versions of data files. Therefore we used Turkish versions and then translated them to English during process. Fund names were the same, Turkish in english version. We did not change them to keep the integrityof data.
+
+These data files unfortunately do not include fund category which is crucial for any analysis. We downloaded  price comprison data from TEFAS web site which helped us match the fund categories and funds codes.
+
+We downloaded 6 x 2 +1 = 13 xlsx files from TEFAs website on 16 th of November. Total size is 112MB.
+
+We imported these files and combined them as a single dataset to be ready for analysis. Combined RDS file size reached 31MB
+
+You can review our raw data, exports and import steps at out google drive directory. Github has 25MB data upload limit therefore we can not share them from github:
+https://drive.google.com/drive/folders/18wJX4YufJGfuj9KWUV3YfNmxSYmhJ8WN?usp=sharing 
 
 
-We have downloaded historical  data of mutual funds from https://www.tefas.gov.tr/TarihselVeriler.aspx Due to the restriction we had to download in 6 files.
+# Data Import Process Summary
+
+Our steps are:
+1) Import price data ("genel bilgiler" sheet) of each mutual fund file to data frames
+2) Combine each data frame in single frame
+3) Import price data ("genel bilgiler" sheet) of each pension fund file to data frames
+4) Combine each pension fund price data frame in a single frame
+5) combine pension and mutual fund price data frames in a single data frame
+6) Repeat above steps for portfolio data ("Porföy Dağılımı" sheet)
+7) Combine portfolio data and price data sheets
+8) Import fund comparison file as data frame and add fund category field to our main data set joining by fund codes.
+9) Export imported combined data file as RDS for eash analysis in nex steps.
+
+
+# Data Import Steps in Details
+
+
 
 We will first import price data which is at the "Genel Bilgiler" sheet of the excel files.
 
@@ -201,7 +244,7 @@ RDS provided faster export and much smaller datafile compared with xlsx and csv.
 
 We will delete bulky xlsx and csv exports. We will keep  RDS for future work for efficiency.
 
-You can review our raw data, exports and import steps at out google drive directory:
+You can review our raw data, exports and import steps at out google drive directory. Github has 25MB data upload limit therefore we can not share them from github:
 https://drive.google.com/drive/folders/18wJX4YufJGfuj9KWUV3YfNmxSYmhJ8WN?usp=sharing 
 
 

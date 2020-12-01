@@ -430,7 +430,11 @@ summary {
 </div>
 
 
-<p>Read imported data set. We have 901894 rows and 35 columns in imported dataset.</p>
+<div id="data-cleaning-transforming-process-summary" class="section level1">
+<h1>Data Cleaning &amp; Transforming Process Summary</h1>
+<p>At this stage, we first conducted usual checks for consistency, missing values and freshness. Then, removed obsolete rows from the data set.</p>
+<p>We also added new variables which will help us better categorize the fund data at the analysis stage. * Automatic participation funds (Otomatik Katılım), government contribution funds (Devlet Katkısı) and participation funds (katılım fonları) were marked from the fund names. * We extracted founder company names and matched them with the funds as an additiona variable.</p>
+<p>Let’s read imported data set. We have 901894 rows and 35 columns at the imported dataset.</p>
 <pre class="r"><code>df_import = readRDS(&quot;df_import.rds&quot;) %&gt;% glimpse()</code></pre>
 <pre><code>## Rows: 901,894
 ## Columns: 35
@@ -671,23 +675,7 @@ summary {
 ## #   p_Foreign_Debt_Instruments &lt;dbl&gt;, p_Foreign_Equity &lt;dbl&gt;,
 ## #   p_Foreign_Securities &lt;dbl&gt;</code></pre>
 <p>Let’s check dates, no NA values, no 0 values</p>
-<pre class="r"><code>df_import %&gt;% filter(is.na(date)==TRUE)</code></pre>
-<pre><code>## # A tibble: 0 x 35
-## # ... with 35 variables: date &lt;dttm&gt;, code &lt;chr&gt;, fund_type &lt;chr&gt;,
-## #   category &lt;chr&gt;, name &lt;chr&gt;, price &lt;dbl&gt;, shares &lt;dbl&gt;, people &lt;dbl&gt;,
-## #   total_value &lt;dbl&gt;, p_Bank_Bills &lt;dbl&gt;, p_Other &lt;dbl&gt;,
-## #   p_FX_Payable_Bills &lt;dbl&gt;, p_Government_Bond &lt;dbl&gt;,
-## #   p_Foreign_Currency_Bills &lt;dbl&gt;, p_Eurobonds &lt;dbl&gt;,
-## #   p_Commercial_Paper &lt;dbl&gt;, p_Fund_Participation_Certificate &lt;dbl&gt;,
-## #   p_Real_Estate_Certificate &lt;dbl&gt;, p_Treasury_Bill &lt;dbl&gt;, p_Stock &lt;dbl&gt;,
-## #   p_Government_Bonds_and_Bills_FX &lt;dbl&gt;, p_Participation_Account &lt;dbl&gt;,
-## #   p_Government_Lease_Certificates &lt;dbl&gt;, p_Precious_Metals &lt;dbl&gt;,
-## #   p_Private_Sector_Lease_Certificates &lt;dbl&gt;, p_Private_Sector_Bond &lt;dbl&gt;,
-## #   p_Repo &lt;dbl&gt;, p_Derivatives &lt;dbl&gt;, p_TMM &lt;dbl&gt;, p_Reverse_Repo &lt;dbl&gt;,
-## #   p_Asset_Backed_Securities &lt;dbl&gt;, p_Term_Deposit &lt;dbl&gt;,
-## #   p_Foreign_Debt_Instruments &lt;dbl&gt;, p_Foreign_Equity &lt;dbl&gt;,
-## #   p_Foreign_Securities &lt;dbl&gt;</code></pre>
-<pre class="r"><code>df_import %&gt;% filter(date==0)</code></pre>
+<pre class="r"><code>df_import %&gt;% filter(is.na(date)==TRUE|date==0)</code></pre>
 <pre><code>## # A tibble: 0 x 35
 ## # ... with 35 variables: date &lt;dttm&gt;, code &lt;chr&gt;, fund_type &lt;chr&gt;,
 ## #   category &lt;chr&gt;, name &lt;chr&gt;, price &lt;dbl&gt;, shares &lt;dbl&gt;, people &lt;dbl&gt;,
@@ -704,20 +692,20 @@ summary {
 ## #   p_Foreign_Debt_Instruments &lt;dbl&gt;, p_Foreign_Equity &lt;dbl&gt;,
 ## #   p_Foreign_Securities &lt;dbl&gt;</code></pre>
 <p>Are there any 0 price or share values? There are 68109 rows with 0 values</p>
-<pre class="r"><code>df_import%&gt;%filter(price==0|shares==0|is.na(price)|is.na(shares))</code></pre>
+<pre class="r"><code>df_import%&gt;%filter(price==0|shares==0|is.na(price)|is.na(shares))%&gt;%relocate(date,code,price,shares,people)%&gt;%arrange(desc(price))</code></pre>
 <pre><code>## # A tibble: 68,109 x 35
-##    date                code  fund_type category name   price shares people
-##    &lt;dttm&gt;              &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;    &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
-##  1 2015-12-07 00:00:00 AZB   pension   Variabl~ ALLI~ 0.0505      0      0
-##  2 2015-12-07 00:00:00 AZO   pension   Mixed F~ ALLI~ 0.0279      0      0
-##  3 2016-12-30 00:00:00 FEO   pension   Variabl~ FİBA~ 0           0      0
-##  4 2016-12-30 00:00:00 FEV   pension   Variabl~ FİBA~ 0           0      0
-##  5 2016-12-30 00:00:00 FEZ   pension   Variabl~ FİBA~ 0           0      0
-##  6 2016-12-30 00:00:00 FYL   pension   Partici~ AVİV~ 0           0      0
-##  7 2016-12-30 00:00:00 FYN   pension   Partici~ AVİV~ 0           0      0
-##  8 2016-12-30 00:00:00 FYU   pension   Partici~ ALLİ~ 0           0      0
-##  9 2016-12-30 00:00:00 FYY   pension   Partici~ ALLİ~ 0           0      0
-## 10 2016-12-30 00:00:00 ZEB   pension   Initial~ TÜRK~ 0           0      0
+##    date                code    price shares people fund_type category name 
+##    &lt;dttm&gt;              &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt;    &lt;chr&gt;
+##  1 2017-05-08 00:00:00 YAY   36.4         0   3103 mutual    Stock U~ YAPI~
+##  2 2015-12-07 00:00:00 AZB    0.0505      0      0 pension   Variabl~ ALLI~
+##  3 2015-12-07 00:00:00 AZO    0.0279      0      0 pension   Mixed F~ ALLI~
+##  4 2016-12-30 00:00:00 FEO    0           0      0 pension   Variabl~ FİBA~
+##  5 2016-12-30 00:00:00 FEV    0           0      0 pension   Variabl~ FİBA~
+##  6 2016-12-30 00:00:00 FEZ    0           0      0 pension   Variabl~ FİBA~
+##  7 2016-12-30 00:00:00 FYL    0           0      0 pension   Partici~ AVİV~
+##  8 2016-12-30 00:00:00 FYN    0           0      0 pension   Partici~ AVİV~
+##  9 2016-12-30 00:00:00 FYU    0           0      0 pension   Partici~ ALLİ~
+## 10 2016-12-30 00:00:00 FYY    0           0      0 pension   Partici~ ALLİ~
 ## # ... with 68,099 more rows, and 27 more variables: total_value &lt;dbl&gt;,
 ## #   p_Bank_Bills &lt;dbl&gt;, p_Other &lt;dbl&gt;, p_FX_Payable_Bills &lt;dbl&gt;,
 ## #   p_Government_Bond &lt;dbl&gt;, p_Foreign_Currency_Bills &lt;dbl&gt;, p_Eurobonds &lt;dbl&gt;,
@@ -730,7 +718,7 @@ summary {
 ## #   p_Asset_Backed_Securities &lt;dbl&gt;, p_Term_Deposit &lt;dbl&gt;,
 ## #   p_Foreign_Debt_Instruments &lt;dbl&gt;, p_Foreign_Equity &lt;dbl&gt;,
 ## #   p_Foreign_Securities &lt;dbl&gt;</code></pre>
-<p>Removed 68109 rows with obsolete entries, 833295 rows left</p>
+<p>We will remove 68109 rows with obsolete entries, 833295 rows left</p>
 <pre class="r"><code>df_import=df_import%&gt;%filter(price&gt;0 &amp; shares&gt;0 &amp;!is.na(price)&amp;!is.na(shares))%&gt;%glimpse()</code></pre>
 <pre><code>## Rows: 833,295
 ## Columns: 35
@@ -770,28 +758,18 @@ summary {
 ## $ p_Foreign_Equity                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
 ## $ p_Foreign_Securities                &lt;dbl&gt; 95.92, 0.00, 0.00, 0.00, 0.00, ...</code></pre>
 <p>total number of funds decreased from 993 to 952 after removing obsolete data rows.</p>
-<pre class="r"><code>df_import%&gt;%distinct(code)</code></pre>
-<pre><code>## # A tibble: 952 x 1
-##    code 
-##    &lt;chr&gt;
-##  1 ABE  
-##  2 AEA  
-##  3 AEB  
-##  4 AEC  
-##  5 AEE  
-##  6 AEG  
-##  7 AEH  
-##  8 AEI  
-##  9 AEK  
-## 10 AEL  
-## # ... with 942 more rows</code></pre>
-<p>Are fund names unique among fund codes? Are there more than 1 name for a fund code? Let’s check them: great there is no problem</p>
+<pre class="r"><code>df_import%&gt;%distinct(code)%&gt;%count()</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##       n
+##   &lt;int&gt;
+## 1   952</code></pre>
+<p>Are fund names unique among fund codes? Are there more than 1 name for a fund code? We checked them and did not find any problem.</p>
 <pre class="r"><code>df_import %&gt;% group_by(code, name)%&gt;%  distinct(code) %&gt;% summarise(count=n())%&gt;%filter(count&gt;1)%&gt;%arrange(desc(count))</code></pre>
 <pre><code>## `summarise()` regrouping output by &#39;code&#39; (override with `.groups` argument)</code></pre>
 <pre><code>## # A tibble: 0 x 3
 ## # Groups:   code [0]
 ## # ... with 3 variables: code &lt;chr&gt;, name &lt;chr&gt;, count &lt;int&gt;</code></pre>
-<p>Are there any funds which are not active any more? Let’s check how many funds have data in the last day of our data set?</p>
+<p>Are there any funds which are not active any more? Let’s check how many funds have data in the last day of our data set.</p>
 <p>Out of the 952, only 920 funds have up to date price data.</p>
 <pre class="r"><code>df_import %&gt;% filter(date==max(date))%&gt;%glimpse() </code></pre>
 <pre><code>## Rows: 920
@@ -831,7 +809,7 @@ summary {
 ## $ p_Foreign_Debt_Instruments          &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
 ## $ p_Foreign_Equity                    &lt;dbl&gt; 0.00, 93.05, 0.00, 0.22, 0.00, ...
 ## $ p_Foreign_Securities                &lt;dbl&gt; 0.00, 0.56, 0.00, 0.00, 0.00, 0...</code></pre>
-<p>Let’s find these 32 funds, they have 6657 rows of data</p>
+<p>Let’s locate these 32 funds, they have 6657 rows in the data set</p>
 <pre class="r"><code>df_uptodatefunds=df_import %&gt;% filter(date==max(date))%&gt;%distinct(code)#%&gt;%glimpse()
 df_inactive=anti_join(df_import,df_uptodatefunds)%&gt;%glimpse()</code></pre>
 <pre><code>## Joining, by = &quot;code&quot;</code></pre>
@@ -872,7 +850,7 @@ df_inactive=anti_join(df_import,df_uptodatefunds)%&gt;%glimpse()</code></pre>
 ## $ p_Foreign_Debt_Instruments          &lt;dbl&gt; NA, NA, 0, 0, 0, 0, 0, 0, 0, 0,...
 ## $ p_Foreign_Equity                    &lt;dbl&gt; NA, NA, 0, 0, 0, 0, 0, 0, 0, 0,...
 ## $ p_Foreign_Securities                &lt;dbl&gt; NA, NA, 17.91, 17.90, 32.79, 44...</code></pre>
-<p>Let’s check the total number of data points and date coverage for these funds. These are inactive funds all from umbreaall hedge funds</p>
+<p>Let’s check the total number of data points and date coverage for these funds. These are inactive funds all from umbrella hedge funds</p>
 <pre class="r"><code>df_inactive %&gt;% group_by(code, fund_type, category) %&gt;% summarise(count=n(), latest=max(date), earliest=min(date), length=max(date)-min(date))%&gt;% arrange(desc(latest))</code></pre>
 <pre><code>## `summarise()` regrouping output by &#39;code&#39;, &#39;fund_type&#39; (override with `.groups` argument)</code></pre>
 <pre><code>## # A tibble: 32 x 7
@@ -890,7 +868,7 @@ df_inactive=anti_join(df_import,df_uptodatefunds)%&gt;%glimpse()</code></pre>
 ##  9 IMT   mutual    Hedge U~   319 2020-10-09 00:00:00 2019-07-02 00:00:00 465 d~
 ## 10 ICG   mutual    Hedge U~   272 2020-10-08 00:00:00 2019-09-11 00:00:00 393 d~
 ## # ... with 22 more rows</code></pre>
-<p>THese are all “Serbest”/“hedge fund” types that are only accessible by “niteliklik yatırımcı”/“qualified investor” mostly institutional investors. This subset don’t have reliable data and behave very different than typical mutual funds which are accessible to general public. We will remove the ones with unreliable data from our analysis data set.</p>
+<p>These are all “Serbest”/“hedge fund” types that are only accessible by “niteliklik yatırımcı”/“qualified investor” mostly institutional investors. This subset don’t have reliable data and behave very different than typical mutual funds which are accessible to general public. We will remove the ones with unreliable data from our analysis data set.</p>
 <p>When we remove 6657 rows from our data set, we now have 826638 rows</p>
 <pre class="r"><code>df_import=semi_join(df_import,df_uptodatefunds)%&gt;%glimpse()</code></pre>
 <pre><code>## Joining, by = &quot;code&quot;</code></pre>
@@ -990,21 +968,11 @@ df_inactive=anti_join(df_import,df_uptodatefunds)%&gt;%glimpse()</code></pre>
 ## 6 TRUE  TRUE          FALSE           37</code></pre>
 <p>We don’t have the names or ids of portfolio management companies in our data set. We need to parse their names from th “name” field. We can also simplify the long names of the funds which would help us during visualisation stage</p>
 <p>There are 920 unique funds.</p>
-<pre class="r"><code>df_import%&gt;%distinct(name)</code></pre>
-<pre><code>## # A tibble: 920 x 1
-##    name                                                                         
-##    &lt;chr&gt;                                                                        
-##  1 ANADOLU HAYAT EMEKLILIK A.Ş.B.R.I.C.ÜLKELER YABANCI DEĞİŞKEN EMEKLİLİK YATIR~
-##  2 ANADOLU HAYAT A.Ş. ALTIN KATILIM EMEKLİLİK YAT.FONU                          
-##  3 AVİVASA EMEKLİLİK VE HAYAT A.Ş. HİSSE SENEDİ GRUP EMEKLİLİK YATIRIM FONU     
-##  4 ALLIANZ YAŞAM VE EMEKLİLİK A.Ş.UNİLEVER DENGELİ DEĞİŞKEN GRUP EMEKLİLİK YATI~
-##  5 ALLIANZ HAYAT VE EMEKLILIK A.Ş. DİNAMİK DEĞİŞKEN EMEKLİLİK YATIRIM FONU      
-##  6 AVİVASA EMEKLİLİK VE HAYAT A.Ş. MUHAFAZAKAR DEĞİŞKEN  EMEKLİLİK YATIRIM FONU 
-##  7 AVİVASA EMEKLİLİK VE HAYAT A.Ş.HİSSE SENEDİ EMEKLİLİK YATIRIM FONU           
-##  8 AVİVASA EMEKLİLİK VE HAYAT A.Ş. KATKI EMEKLİLİK YATIRIM FONU                 
-##  9 AVİVASA EMEKLİLİK VE HAYAT A.Ş. BORÇLANMA ARAÇLARI GRUP EMEKLİLİK YATIRIM FO~
-## 10 AVİVASA EMEKLİLİK VE HAYAT A.Ş.ALTIN EMEKLİLİK YAT.FON                       
-## # ... with 910 more rows</code></pre>
+<pre class="r"><code>df_import%&gt;%distinct(name)%&gt;%count()</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##       n
+##   &lt;int&gt;
+## 1   920</code></pre>
 <p>From the TEFAS web site, names of the companies are inside the html code of the page. We just copied them to an excel file. Import the names of the owner companies.</p>
 <pre class="r"><code>df_companies=read_excel(&quot;companies.xlsx&quot;)
 df_companies%&gt;%arrange(company_name)</code></pre>
@@ -1022,7 +990,7 @@ df_companies%&gt;%arrange(company_name)</code></pre>
 ##  9 ALA          ATLAS PORTFÖY YÖNETİMİ A.Ş.     mutual      
 ## 10 TLR          AURA PORTFÖY YÖNETİMİ A.Ş.      mutual      
 ## # ... with 43 more rows</code></pre>
-<p>There are 53 companies. 36 of them mutual funds, and 17 of them are pension fund companies.</p>
+<p>There are 53 entries. 36 of them mutual funds, and 17 of them are pension fund companies.</p>
 <pre class="r"><code>df_companies%&gt;%group_by(company_type)%&gt;%summarise(n())</code></pre>
 <pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
 <pre><code>## # A tibble: 2 x 2
@@ -1030,7 +998,7 @@ df_companies%&gt;%arrange(company_name)</code></pre>
 ##   &lt;chr&gt;        &lt;int&gt;
 ## 1 mutual          36
 ## 2 pension         17</code></pre>
-<p>TÜRKİYE HAYAT VE EMEKLİLİK A.Ş. has triple entries.</p>
+<p>TÜRKİYE HAYAT VE EMEKLİLİK A.Ş. has triple entries.Other company entries are unique.</p>
 <pre class="r"><code>df_companies%&gt;%group_by(company_name)%&gt;%summarise(count=n())%&gt;%arrange(desc(count))</code></pre>
 <pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
 <pre><code>## # A tibble: 51 x 2
@@ -1158,7 +1126,7 @@ print(paste(&quot;First &quot;, i,&quot;characters. Distinct counts: &quot;,coun
 ## [1] &quot;First  23 characters. Distinct counts:  496&quot;
 ## [1] &quot;First  24 characters. Distinct counts:  504&quot;
 ## [1] &quot;First  25 characters. Distinct counts:  516&quot;</code></pre>
-<p>First 9 characters also sufficient to diferentiate 51 unique ompanies</p>
+<p>First 9 characters also sufficient to differentiate 51 unique companies</p>
 <pre class="r"><code>for (i in 1:25) {
   
 
@@ -1318,6 +1286,7 @@ df_companies</code></pre>
 <p>We have completed one more milestone. Let’s export final, clean dataframe as RDS for exploratory analysis.</p>
 <pre class="r"><code>saveRDS(df_import,&quot;df_clean.rds&quot;)</code></pre>
 <p>We have uploaded the df_clean.rds file and other material for this milestone to the google drive. You can review them from this link: <a href="https://drive.google.com/drive/folders/1SJPoQqPOXHdLEUReML9zpWw7NaNrcJUY?usp=sharing" class="uri">https://drive.google.com/drive/folders/1SJPoQqPOXHdLEUReML9zpWw7NaNrcJUY?usp=sharing</a></p>
+</div>
 
 
 

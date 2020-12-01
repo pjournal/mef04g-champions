@@ -19,8 +19,16 @@ library(stringi)
 
 
 ```
+# Data Cleaning & Transforming Process Summary
+At this stage, we first conducted usual checks for consistency, missing values and freshness. Then, removed obsolete rows from the data set. 
 
-Read imported data set. We have 901894 rows and 35 columns in imported dataset.
+We also added new variables which will help us better categorize the fund data at the analysis stage. 
+* Automatic participation funds (Otomatik Katılım), government contribution funds (Devlet Katkısı) and participation funds (katılım fonları) were marked from the fund names. 
+* We extracted founder company names and matched them with the funds as an additiona variable.
+
+
+
+Let's read imported data set. We have 901894 rows and 35 columns at the imported dataset.
 ```{r}
 df_import = readRDS("df_import.rds") %>% glimpse()
 
@@ -107,10 +115,7 @@ df_import %>% filter(is.na(shares)==TRUE)
 Let's check dates, no NA values, no 0 values
 
 ```{r}
-df_import %>% filter(is.na(date)==TRUE)
-
-df_import %>% filter(date==0)
-
+df_import %>% filter(is.na(date)==TRUE|date==0)
 
 ```
 
@@ -118,11 +123,13 @@ df_import %>% filter(date==0)
 Are there any 0 price or share values? There are 68109 rows with 0 values
 
 ```{r}
-df_import%>%filter(price==0|shares==0|is.na(price)|is.na(shares))
+df_import%>%filter(price==0|shares==0|is.na(price)|is.na(shares))%>%relocate(date,code,price,shares,people)%>%arrange(desc(price))
+
 
 
 ```
-Removed 68109 rows with obsolete entries, 833295 rows left
+
+We will remove 68109 rows with obsolete entries, 833295 rows left
 
 ```{r}
 df_import=df_import%>%filter(price>0 & shares>0 &!is.na(price)&!is.na(shares))%>%glimpse()
@@ -135,14 +142,14 @@ df_import=df_import%>%filter(price>0 & shares>0 &!is.na(price)&!is.na(shares))%>
 
 total number of funds decreased from 993 to 952 after removing obsolete data rows.
 ```{r}
-df_import%>%distinct(code)
+df_import%>%distinct(code)%>%count()
 
 ```
 
 
 
 
-Are fund names unique among fund codes? Are there more than 1 name for a fund code? Let's check them: great there is no problem
+Are fund names unique among fund codes? Are there more than 1 name for a fund code? We checked them and did not find any problem.
 
 ```{r}
 
@@ -156,7 +163,7 @@ df_import %>% group_by(code, name)%>%  distinct(code) %>% summarise(count=n())%>
 
 
 
-Are there any funds which are not active any more? Let's check how many funds have data in the last day of our data set?
+Are there any funds which are not active any more? Let's check how many funds have data in the last day of our data set.
 
 Out of the 952, only 920  funds have up to date price data. 
 
@@ -167,7 +174,7 @@ df_import %>% filter(date==max(date))%>%glimpse()
 ```
 
 
-Let's find these 32 funds, they have 6657 rows of data
+Let's locate these 32 funds, they have 6657 rows in the data set
 
 ```{r}
 
@@ -179,7 +186,7 @@ df_inactive=anti_join(df_import,df_uptodatefunds)%>%glimpse()
 
 
 
-Let's check the total number of data points and date coverage for these funds. These are inactive funds all from umbreaall hedge funds
+Let's check the total number of data points and date coverage for these funds. These are inactive funds all from umbrella hedge funds
 
 ```{r}
 
@@ -192,7 +199,7 @@ df_inactive %>% group_by(code, fund_type, category) %>% summarise(count=n(), lat
 
 
 
-THese are all "Serbest"/"hedge fund" types that are only accessible by "niteliklik yatırımcı"/"qualified investor" mostly institutional investors. This subset  don't have reliable data and behave very different than typical mutual funds which are accessible to general public. We will remove the ones with unreliable data from our analysis data set.
+These are all "Serbest"/"hedge fund" types that are only accessible by "niteliklik yatırımcı"/"qualified investor" mostly institutional investors. This subset  don't have reliable data and behave very different than typical mutual funds which are accessible to general public. We will remove the ones with unreliable data from our analysis data set.
 
 When we remove 6657 rows from our data set, we now have 826638 rows
 
@@ -236,7 +243,7 @@ We don't have the names or ids of portfolio management companies in our data set
 There are 920 unique funds.
 
 ```{r}
-df_import%>%distinct(name)
+df_import%>%distinct(name)%>%count()
 
 
 ```
@@ -251,7 +258,7 @@ df_companies%>%arrange(company_name)
 
 
 ```
-There are 53 companies. 36 of them mutual funds, and 17 of them are pension fund companies.
+There are 53 entries.  36 of them mutual funds, and 17 of them are pension fund companies.
 
 
 ```{r}
@@ -262,7 +269,7 @@ df_companies%>%group_by(company_type)%>%summarise(n())
 ```
 
 
-TÜRKİYE HAYAT VE EMEKLİLİK A.Ş. has triple entries.
+TÜRKİYE HAYAT VE EMEKLİLİK A.Ş. has triple entries.Other company entries are unique.
 ```{r}
 
 df_companies%>%group_by(company_name)%>%summarise(count=n())%>%arrange(desc(count))
@@ -350,7 +357,7 @@ print(paste("First ", i,"characters. Distinct counts: ",count(df_temp)[[1,1]]))
 ```
 
 
-First 9 characters also sufficient to diferentiate 51 unique ompanies
+First 9 characters also sufficient to differentiate 51 unique companies
 ```{r}
 
 for (i in 1:25) {
