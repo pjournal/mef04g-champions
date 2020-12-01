@@ -15,7 +15,7 @@
 
 [Preprocessing Step 2: Data Cleaining & Transforming](champions-tefas-data-clean-transform.html)
 
-[Exploratory Analysis](exploratory-analysis.html)
+[Exploratory Analysis](CK-tefas-project-2.3.html)
 
 [EDA](EDA.html)
 
