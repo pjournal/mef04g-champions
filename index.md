@@ -11,9 +11,9 @@
 
 [Project Proposal](Proposal.html)
 
-[Preprocessing Step 1: Data Import & Consolidation](champions_tefas_data_import.html)
+[Preprocessing Step 1: Data Import & Consolidation](champions-tefas-data-import.html)
 
-[Preprocessing Step 2: Data Cleaining & Transforming](champions_tefas_data_clean_transform.html)
+[Preprocessing Step 2: Data Cleaining & Transforming](champions-tefas-data-clean-transform.html)
 
 [Exploratory Analysis](exploratory-analysis.html)
 
