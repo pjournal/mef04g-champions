@@ -17,7 +17,7 @@
 
 [Exploratory Analysis](CK-tefas-project-2.3.html)
 
-[EDA](EDA.html)
+[EDA](CK-tefas-project-2.3.html)
 
 
 ## Week 04 Group Assignment - ISBike
