@@ -17,6 +17,9 @@
 
 [Exploratory Analysis](exploratory-analysis.html)
 
+[Exploratory Analysis](EDA.html)
+
+
 ## Week 04 Group Assignment - ISBike
 
 [Shiny Output](https://uguraskar.shinyapps.io/mef04g-champions/)
