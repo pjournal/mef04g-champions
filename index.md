@@ -13,7 +13,7 @@
 
 [Preprocessing Step 1: Data Import & Consolidation](champions-tefas-data-import.html)
 
-[Preprocessing Step 2: Data Cleaining & Transforming](champions-tefas-data-clean-transform.html)
+[Preprocessing Step 2: Data Clean & Transform](champions-tefas-data-clean-transform.html)
 
 [Exploratory Data Analysis](champions-tefas-eda.html)
 
