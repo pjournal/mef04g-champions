@@ -15,9 +15,7 @@
 
 [Preprocessing Step 2: Data Cleaining & Transforming](champions-tefas-data-clean-transform.html)
 
-[Exploratory Analysis](CK-tefas-project-2.3.html)
-
-[EDA](CK-tefas-project-2.3.html)
+[Exploratory Data Analysis](champions-tefas-eda.html)
 
 
 ## Week 04 Group Assignment - ISBike
