@@ -434,6 +434,12 @@ summary {
 <h1>Data Cleaning &amp; Transforming Process Summary</h1>
 <p>At this stage, we first conducted usual checks for consistency, missing values and freshness. Then, removed obsolete rows from the data set.</p>
 <p>We also added new variables which will help us better categorize the fund data at the analysis stage. * Automatic participation funds (Otomatik Katılım), government contribution funds (Devlet Katkısı) and participation funds (katılım fonları) were marked from the fund names. * We extracted founder company names and matched them with the funds as an additiona variable.</p>
+<p>As result our initial imported data set total row number decreased from 901,894 to 826,638. total columns increased from 35 to 40. Total unique funds decreased from 993 to 920.</p>
+<p>We have uploaded the df_clean.rds file and other material for this milestone to the google drive. Output data file was too big to be uploaded to github.</p>
+<p>You can review them from this link: <a href="https://drive.google.com/drive/folders/1SJPoQqPOXHdLEUReML9zpWw7NaNrcJUY?usp=sharing" class="uri">https://drive.google.com/drive/folders/1SJPoQqPOXHdLEUReML9zpWw7NaNrcJUY?usp=sharing</a></p>
+</div>
+<div id="data-cleaning-transforming-process-detailed-steps" class="section level1">
+<h1>Data Cleaning &amp; Transforming Process Detailed Steps</h1>
 <p>Let’s read imported data set. We have 901894 rows and 35 columns at the imported dataset.</p>
 <pre class="r"><code>df_import = readRDS(&quot;df_import.rds&quot;) %&gt;% glimpse()</code></pre>
 <pre><code>## Rows: 901,894
