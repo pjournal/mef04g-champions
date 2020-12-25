@@ -1,0 +1,73 @@
+---
+title: "Benchmark data import"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Sys.setenv(LANG = "en")
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(writexl)
+
+
+```
+
+
+```{r}
+df_bist=read_excel("bist100.xlsx")%>%head(-9)%>%select(1,2)%>%mutate(date=dmy(Tarih))%>%select(-Tarih)%>%rename(xu100=`TP MK F BILESIK`)%>%glimpse()
+```
+
+
+
+```{r}
+df_tufe=read_delim("tufe_raw.csv",  delim="|")%>%select(4,5,6)%>%tail(-1)%>%head(-1)%>%rename(tufe=Sütunlar, year=X4, month=X5)%>%fill(year)%>%separate(month,c("month_num","month_text"),sep="-")%>%unite("date_merge", year:month_num,sep="-")%>%mutate(date=ym(date_merge))%>%select(-month_text,-date_merge)%>%glimpse()
+```
+
+
+```{r}
+df_deposit=read_excel("deposit_interest_rates_monthly.xlsx")%>%mutate(date=ym(Tarih))%>%rename(deposit_rate=`TP TRY MT06`)%>%filter(is.na(deposit_rate)==FALSE)%>%select(date,deposit_rate)%>%glimpse()
+```
+
+
+```{r}
+df_gold=read_excel("gold.xlsx")%>%filter(is.na(Tarih)==FALSE)%>%rename(date=Tarih, gold=Fiyat)%>%glimpse()
+```
+
+
+```{r}
+df_property=read_excel("property_price_index.xlsx")%>%mutate(date=my(Tarih))%>%filter(is.na(date)==FALSE)%>%rename(property_index=`TP HKFE01`)%>%select(date,property_index)%>%glimpse()
+```
+
+
+```{r}
+df_benchmark=full_join(df_bist,df_deposit)
+df_benchmark=full_join(df_benchmark,df_gold)
+df_benchmark=full_join(df_benchmark,df_property)
+df_benchmark=full_join(df_benchmark,df_tufe)%>%filter(date>=date("2015-01-01"))%>%arrange(date)
+
+df_benchmark
+```
+
+
+```{r}
+write_rds(df_benchmark, "benchmark.rds")
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
