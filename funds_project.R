@@ -1,4 +1,4 @@
-pti <- c("shiny","shinydashboard","tidyverse", "tidyr")
+pti <- c("shiny","shinydashboard","tidyverse","tidyr","lubridate")
 pti <- pti[!(pti %in% installed.packages())]
 if(length(pti)>0){
   install.packages(pti)
@@ -11,27 +11,28 @@ library(shiny)
 library(shinydashboard)
 library(tidyverse)
 library(tidyr)
+library(lubridate)
 
 ##Preparing the data
 
-setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #Sets the current working directory.
+#setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #Sets the current working directory.
 df_clean = readRDS('tefas_df_clean.rds')
 
 df_price_change = df_clean%>% 
-  filter(date==ymd("2019-11-15")|date==ymd("2020-11-16"))%>%
+  dplyr::filter(date==ymd("2019-11-15")|date==ymd("2020-11-16"))%>%
   group_by(code,fund_type,category,company_name)%>%
   arrange(code,date)%>%
-  mutate(previous_price=lag(price),annual_change=price/previous_price-1)%>%
+  mutate(previous_price=dplyr::lag(price),annual_change=price/previous_price-1)%>%
   relocate(annual_change)%>%
-  filter(!is.na(annual_change))%>%
+  dplyr::filter(!is.na(annual_change))%>%
   select(-previous_price)
 
 df_plot_price = df_clean %>% 
   group_by(code,fund_type,category,company_name) %>% 
   arrange(code,date)%>%mutate(previousday=lag(price,n=1), daily_price_change=price/previousday-1) %>%
-  filter(date>=ymd("20191115")) %>%
+  dplyr::filter(date>=ymd("20191115")) %>%
   summarise(avg_daily_change=mean(daily_price_change, na.rm = TRUE), stdev=sd(daily_price_change, na.rm = TRUE),earliest=min(date), count=n()) %>%
-  filter(earliest<=ymd("20191118")) %>% 
+  dplyr::filter(earliest<=ymd("20191118")) %>% 
   arrange(count) %>%
   left_join(df_price_change,df_plot_price %>% select(code, avg_daily_change, stdev), by="code") %>%
   select(-fund_type.y, -category.y) %>%
@@ -50,15 +51,15 @@ df_today_investors= df_clean %>%
   filter(date==ymd("2020-11-16"))
 
 df_valued_funds = df_clean %>%
-  filter(date == ymd("2019-11-18") | date == ymd("2020-11-16")) %>%
+  dplyr::filter(date == ymd("2019-11-18") | date == ymd("2020-11-16")) %>%
   select(date,fund_type, category, code, company_name ,name, total_value, price) %>%
   arrange(code, name, date) %>%
   group_by(code, name) %>%
-  mutate(previous_price=as.numeric(lag(price,n=1)), 
-         change_price_percentage=100*(price-as.numeric(lag(price,n=1)))/ as.numeric(lag(price,n=1)),
-         previous_total_value = as.numeric(lag(total_value,n=1)),
-         change_total_value_percentage=100*(total_value-as.numeric(lag(total_value,n=1)))/ as.numeric(lag(total_value,n=1))) %>%
-  filter(date==ymd('2020-11-16')) %>%
+  mutate(previous_price=as.numeric(dplyr::lag(price,n=1)), 
+         change_price_percentage=100*(price-as.numeric(dplyr::lag(price,n=1)))/ as.numeric(dplyr::lag(price,n=1)),
+         previous_total_value = as.numeric(dplyr::lag(total_value,n=1)),
+         change_total_value_percentage=100*(total_value-as.numeric(dplyr::lag(total_value,n=1)))/ as.numeric(dplyr::lag(total_value,n=1))) %>%
+  dplyr::filter(date==ymd('2020-11-16')) %>%
   select(date,fund_type, category, code, name, price, previous_price, change_price_percentage, total_value, previous_total_value,change_total_value_percentage)
 
 setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #Sets the current working directory.
@@ -179,7 +180,7 @@ server <- function(input, output, session) {
   )
   output$APCvsSTDDCPlot = renderPlot({
     ggplot(df_plot_price %>%
-             filter(category %in% input$categoryAPCvsSTDDCInput)
+             dplyr::filter(category %in% input$categoryAPCvsSTDDCInput)
            )+
       geom_point(aes(x=avg_daily_change, y=stdev))+
       scale_x_log10()+
