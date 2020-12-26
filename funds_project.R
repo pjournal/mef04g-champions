@@ -62,9 +62,6 @@ df_valued_funds = df_clean %>%
   dplyr::filter(date==ymd('2020-11-16')) %>%
   select(date,fund_type, category, code, name, price, previous_price, change_price_percentage, total_value, previous_total_value,change_total_value_percentage)
 
-setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #Sets the current working directory.
-df_clean = readRDS('tefas_df_clean.rds')
-
 categories = 
   df_clean %>% 
   distinct(category) %>% 
