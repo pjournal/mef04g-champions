@@ -1,133 +1,142 @@
+pti <- c("shiny","shinydashboard","tidyverse", "lubridate", "tidyr","readr","readxl")
+pti <- pti[!(pti %in% installed.packages())]
+if(length(pti)>0){
+  install.packages(pti)
+}
+Sys.setenv(LANG = "en")
+
 ## Libraries
+library(shiny)
+library(shinydashboard)
 library(tidyverse)
 library(lubridate)
 library(tidyr)
 library(dplyr)
 library(readr)
 library(readxl)
-library(ggplot2movies)
-library(jsonlite)
+library(stringr)
+library(stringi)
+library(clipr)
 
+##Preparing the data
 
+setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #Sets the current working directory.
+df_clean = readRDS('tefas_df_clean.rds')
 
-setwd("C:/Users/ahmet/Desktop/MEF_BDA/BDA-503/Project")
+df_price_change = df_clean%>% 
+  filter(date==ymd("2019-11-15")|date==ymd("2020-11-16"))%>%
+  group_by(code,fund_type,category,company_name)%>%
+  arrange(code,date)%>%
+  mutate(previous_price=lag(price),annual_change=price/previous_price-1)%>%
+  relocate(annual_change)%>%
+  filter(!is.na(annual_change))%>%
+  select(-previous_price)
 
-## df_all <- readRDS("df_all.rds")
-df_clean_all = readRDS("df_clean_2.1.rds")
+df_plot_price = df_clean %>% 
+  group_by(code,fund_type,category,company_name) %>% 
+  arrange(code,date)%>%mutate(previousday=lag(price,n=1), daily_price_change=price/previousday-1) %>%
+  filter(date>=ymd("20191115")) %>%
+  summarise(avg_daily_change=mean(daily_price_change, na.rm = TRUE), stdev=sd(daily_price_change, na.rm = TRUE),earliest=min(date), count=n()) %>%
+  filter(earliest<=ymd("20191118")) %>% 
+  arrange(count) %>%
+  left_join(df_price_change,df_plot_price %>% select(code, avg_daily_change, stdev), by="code") %>%
+  select(-fund_type.y, -category.y) %>%
+  rename(fund_type=fund_type.x,category=category.x) %>%
+  relocate(avg_daily_change,stdev)
 
-df_fund = df_clean_all %>% 
-  mutate(year=lubridate::year(date), month=lubridate::month(date)) %>%
-  filter(ymd(date)>'2019-11-15') %>%
-  select(date, year, month, code, fund_type, category, name, price, shares, people, total_value)
+setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #Sets the current working directory.
+df_clean = readRDS('tefas_df_clean.rds')
 
-## GENERAL
-fund_day = df_fund %>% group_by(date) %>%
-  summarise(avg_price=mean(price), avg_total_value = mean(total_value)) %>%
-  arrange(date) %>%
-  transform(previousday_avg_price=as.numeric(lag(avg_price,1))) %>%
-  transform(change_avg_price=(avg_price-previousday_avg_price)/previousday_avg_price) %>%
-  transform(change_per_avg_price=100*change_avg_price) %>%
-  select(date,avg_price,previousday_avg_price,change_avg_price,change_per_avg_price,avg_total_value)
+categories = 
+  df_clean %>% 
+  distinct(category) %>% 
+  unlist(.,use.names = FALSE)
 
-std_fund = sd(unlist(fund_day['change_avg_price']), na.rm = TRUE)
-mean_fund = mean(unlist(fund_day['avg_price']))
+print(categories)
 
-## FUND TYPE
-fund_type = df_fund %>% group_by(date, fund_type) %>%
-  summarise(avg_price=mean(price), avg_total_value = mean(total_value)) %>%
-  group_by(fund_type) %>%
-  arrange(fund_type,date) %>%
-  mutate(previousday_avg_price=as.numeric(lag(avg_price,n=1))) %>%
-  relocate(date,fund_type, avg_price, previousday_avg_price) %>%
-  transform(change_avg_price=(avg_price-previousday_avg_price)/previousday_avg_price) %>%
-  transform(change_per_avg_price=100*change_avg_price)
+# header board
+header = dashboardHeader(
+  title = 'TEFAS Fund Data Exploratory Data Analysis'
+  # task list for status of data processing
+  , dropdownMenuOutput('task_menu'))
 
-summarize_fund_type = fund_type %>% group_by(fund_type) %>%
-  summarise(avg_fund_type=mean(avg_price) ,std_fund_type = sd(change_avg_price, na.rm = TRUE))
+# Side bar boardy
+sidebar <- dashboardSidebar(
+  sidebarMenu(
+    id = 'menu_tabs'
+    , menuItem('Dataset', tabName = 'miDataset')
+  ),
+  sidebarMenu(
+    id = 'menu_tabs'
+    , menuItem('Annual Price Change vs Standard Deviation of Daily Change', tabName = 'APCvsSTDDC')
+  ),
+  sidebarMenu(
+    id = 'menu_tabs'
+    , menuItem('Sources', tabName = 'miSources')
+  )
+)
 
+# Body board
+body <- dashboardBody(
+  tabItems(
+    tabItem(
+      tabName = 'miDataset',
+      DT::DTOutput('isActiveTable')
+    ),
+    tabItem(
+      tabName = 'APCvsSTDDC',
+      plotOutput('APCvsSTDDCPlot'),
+      selectInput("categoryAPCvsSTDDCInput",
+                  h3("Category"), 
+                  choices = c("All",categories),
+                  selected = categories,
+                  multiple = TRUE
+      ),
+      sliderInput("cpRate",
+                  "Rate",
+                  min = 0,
+                  max = 100,
+                  value = c(0,100),
+                  step = 5,
+                  ticks = FALSE,
+                  sep = "")
+    ),
+    tabItem(
+      tabName = 'miSources',
+      paste('test')
+    )
+  )
+)
 
-## CATEGORY
-category_df = df_fund %>% group_by(date, fund_type, category) %>%
-  summarise(avg_price=mean(price), avg_total_value = mean(total_value)) %>%
-  group_by(fund_type, category) %>%
-  arrange(fund_type,category, date) %>%
-  mutate(previousday_avg_price=as.numeric(lag(avg_price,n=1))) %>%
-  relocate(date,fund_type,category, avg_price, previousday_avg_price) %>%
-  transform(change_avg_price=(avg_price-previousday_avg_price)/previousday_avg_price) %>%
-  transform(change_per_avg_price=100*change_avg_price)
+# Shiny UI
+ui <- dashboardPage(
+  title = 'TEFAS Fund Data Exploratory Data Analysis',
+  dashboardHeader(),
+  sidebar,
+  body
+)
 
-summarize_category = category_df %>% group_by(category) %>%
-  summarise(avg_category=mean(avg_price), std_category = sd(change_avg_price,na.rm = TRUE))
+server <- function(input, output, session) {
+  observe({
+    req(input$mydata)
+    updateTabItems(session, 'menu_tabs', 'mapISBIKE')
+  })
+  output$isActiveTable = DT::renderDT(
+    df_clean
+  )
+  output$APCvsSTDDCPlot = renderPlot({
+    ggplot(df_plot_price %>%
+             filter(category %in% input$categoryAPCvsSTDDCInput)
+           )+
+      geom_point(aes(x=avg_daily_change, y=stdev))+
+      scale_x_log10()+
+      scale_y_log10()+
+      theme_minimal()+
+      theme(legend.position="bottom")+
+      facet_wrap(vars(category)) +
+      labs(title = 'Annual Price Change vs Daily Change Std', x='Annual Price Change', y='Daily Change Std') 
+  })
+}
 
-
-## COMPANY CODE
-code_df = df_fund %>% group_by(date, code) %>%
-  summarise(avg_price=mean(price), avg_total_value = mean(total_value)) %>%
-  group_by(code) %>%
-  arrange(code, date) %>%
-  mutate(previousday_avg_price=as.numeric(lag(avg_price,n=1))) %>%
-  relocate(date,code, avg_price, previousday_avg_price) %>%
-  transform(change_avg_price=(avg_price-previousday_avg_price)/previousday_avg_price) %>%
-  transform(change_per_avg_price=100*change_avg_price)
-
-summarize_code = code_df %>% group_by(code) %>%
-  summarise(avg_code=mean(avg_price), std_code = sd(change_avg_price, na.rm = TRUE))
-
-
-## Mean and STD Graphics For Categories
-scatter_category = ggplot(summarize_category, aes(x=avg_category, y=std_category)) +
-  geom_point() +
-  labs(title = "Avg Fund Price vs Avg Std of Price Change for Categories",x="Average Fund Price", y="Average Std of Daily Change")
-
-scatter_category
-
-# CHANGE IN 1 YEAR
-df_2 = df_fund %>%
-  filter(date == ymd("2019-11-18") | date == ymd("2020-11-16")) %>%
-  select(date,fund_type, category, code, name, total_value, price) %>%
-  arrange(code, name, date)
-
-
-df_3 = df_2 %>%
-  group_by(code, name) %>%
-  mutate(previous_price=as.numeric(lag(price,n=1)), 
-         change_price_percentage=100*(price-as.numeric(lag(price,n=1)))/ as.numeric(lag(price,n=1)),
-         previous_total_value = as.numeric(lag(total_value,n=1)),
-         change_total_value_percentage=100*(total_value-as.numeric(lag(total_value,n=1)))/ as.numeric(lag(total_value,n=1)))%>%
-  filter(date==ymd('2020-11-16')) %>%
-  select(date,fund_type, category, code, name, price, previous_price, change_price_percentage, total_value, previous_total_value,change_total_value_percentage )
-
-## BEST 40
-order_price_best = df_3 %>%
-  arrange(desc(change_price_percentage)) %>%
-  select(fund_type, category, code, name, previous_price, price, change_price_percentage)
-
-best_price_funds=order_price_best[1:40, ]
-
-best_fund_type = best_price_funds %>%
-  group_by(fund_type) %>%
-  count(fund_type)
-
-best_category = best_price_funds %>%
-  group_by(category) %>%
-  count(category) %>%
-  arrange(desc(n))
-
-## WORST 40
-order_price_worst = df_3 %>%
-  arrange(change_price_percentage) %>%
-  select(fund_type, category, code, name, previous_price, price, change_price_percentage)
-
-worst_price_funds=order_price_worst[1:40, ]
-
-worst_fund_type = worst_price_funds %>%
-  group_by(fund_type) %>%
-  count(fund_type)
-
-worst_category = worst_price_funds %>%
-  group_by(category) %>%
-  count(category) %>%
-  arrange(desc(n))
-
-
-
+# Run the application 
+shinyApp(ui = ui, server = server)
