@@ -44,6 +44,10 @@ df_plot_price = df_clean %>%
   rename(fund_type=fund_type.x,category=category.x) %>%
   relocate(avg_daily_change,stdev)
 
+df_plot_categories = df_plot_price %>%
+  group_by(category, fund_type) %>%
+  summarize(avg_daily_change=mean(avg_daily_change,na.rm=TRUE),stdev=mean(stdev,na.rm = TRUE), annual_change=mean(annual_change,na.rm=TRUE))
+
 setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #Sets the current working directory.
 df_clean = readRDS('tefas_df_clean.rds')
 
@@ -69,6 +73,10 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     id = 'menu_tabs'
     , menuItem('Annual Price Change vs Standard Deviation of Daily Change', tabName = 'APCvsSTDDC')
+  ),
+  sidebarMenu(
+    id = 'menu_tabs'
+    , menuItem('Annual Price Change vs Standard Deviation of Daily Change Categories', tabName = 'APCvsSTDDCC')
   ),
   sidebarMenu(
     id = 'menu_tabs'
@@ -100,6 +108,16 @@ body <- dashboardBody(
                   step = 5,
                   ticks = FALSE,
                   sep = "")
+    ),
+    tabItem(
+      tabName = 'APCvsSTDDCC',
+      plotOutput('APCvsSTDDCCPlot'),
+      selectInput("categoryAPCvsSTDDCCInput",
+                  h3("Category"), 
+                  choices = c("All",categories),
+                  selected = categories,
+                  multiple = TRUE
+      )
     ),
     tabItem(
       tabName = 'miSources',
@@ -135,6 +153,18 @@ server <- function(input, output, session) {
       theme(legend.position="bottom")+
       facet_wrap(vars(category)) +
       labs(title = 'Annual Price Change vs Daily Change Std', x='Annual Price Change', y='Daily Change Std') 
+  })
+  output$APCvsSTDDCCPlot = renderPlot({
+    ggplot(df_plot_categories %>%
+             filter(category %in% input$categoryAPCvsSTDDCCInput)
+    )+
+      geom_point(aes(x=annual_change, y=stdev, color=category))+
+      scale_x_log10()+
+      scale_y_log10()+
+      theme_minimal()+
+      theme(legend.position="bottom")+
+      facet_wrap(vars(fund_type))+
+      labs(title = 'Annual Price Change vs Daily Change Std for Categories', x='Annual Price Change', y='Daily Change Std') 
   })
 }
 
