@@ -19,14 +19,29 @@ library(writexl)
 
 
 ```{r}
-df=readRDS("df_clean.rds")%>%select(-starts_with("p_"))%>%mutate(year=year(date), month=month(date))%>%group_by(code,year,month)%>%arrange(date)%>%summarise(data_date=max(date), OKS=last(OKS), participation=last(participation),contribution=last(contribution),code=last(code), fund_type=last(fund_type), category=last(category), name=last(name), price=last(price), shares=last(shares), people=last(people), total_value=last(total_value), company_code=last(company_code), company_name=last(company_name))%>%mutate(date=ymd(str_c(year,month,"1",sep="-")))
+df=readRDS("df_clean.rds")%>%select(-starts_with("p_"))%>%mutate(year=year(date), month=month(date))%>%group_by(code,year,month)%>%arrange(date)%>%summarise(data_date=max(date), OKS=last(OKS), participation=last(participation),contribution=last(contribution),code=last(code), fund_type=last(fund_type), category=last(category), name=last(name), price=last(price), shares=last(shares), people=last(people), total_value=last(total_value), company_code=last(company_code), company_name=last(company_name))%>%mutate(date=ymd(str_c(year,month,"1",sep="-")))%>%select(-year, -month, -data_date)
 
 ```
 
 
 ```{r}
 write_rds(df,"monthly_fund_data.rds")
-write_xlsx(df,"monthly_fund_data.xlsx")
+```
+read melted benchmark data
+```{r}
+
+df_benchmark_melt=readRDS("./benchmark_data/benchmark_melt.rds")
+
+```
+
+merge fund data and benchmark data
+```{r}
+df_merged=bind_rows(df, df_benchmark_melt)
+
+write_rds(df_merged,"monthly_fund_benchmark_merged.rds")
+
+
+
 ```
 
 
@@ -34,15 +49,6 @@ write_xlsx(df,"monthly_fund_data.xlsx")
 
 ```
 
-
-```{r}
-
-```
-
-
-```{r}
-
-```
 
 
 ```{r}
