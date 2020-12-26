@@ -1,22 +1,16 @@
-pti <- c("shiny","shinydashboard","tidyverse", "lubridate", "tidyr","readr","readxl")
+pti <- c("shiny","shinydashboard","tidyverse", "tidyr")
 pti <- pti[!(pti %in% installed.packages())]
 if(length(pti)>0){
   install.packages(pti)
 }
+
 Sys.setenv(LANG = "en")
 
 ## Libraries
 library(shiny)
 library(shinydashboard)
 library(tidyverse)
-library(lubridate)
 library(tidyr)
-library(dplyr)
-library(readr)
-library(readxl)
-library(stringr)
-library(stringi)
-library(clipr)
 
 ##Preparing the data
 
