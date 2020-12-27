@@ -1,0 +1,13 @@
+name: tefas_fund_analysis
+title: tefas_fund_analysis
+username:
+account: uguraskar
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3430061
+bundleId: 4030895
+url: https://uguraskar.shinyapps.io/tefas_fund_analysis/
+when: 1609009331.92932
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: _config.yml|champions-tefas-data-clean-transform.html|champions-tefas-data-import.html|champions-tefas-eda.html|df_clean.rds|fund_transform_daily_monthly.Rmd|index.md|isbike_20201118.rds|monthly_fund_benchmark_merged.rds|monthly_fund_data.rds|Proposal.html|Week_04_Group_Assignment.R|archieve|benchmark_data
