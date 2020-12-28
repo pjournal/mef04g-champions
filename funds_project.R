@@ -1,4 +1,4 @@
-pti <- c("shiny","shinydashboard","tidyverse","tidyr","lubridate")
+pti <- c("shiny","shinydashboard","shinyWidgets","tidyverse","tidyr","lubridate")
 pti <- pti[!(pti %in% installed.packages())]
 if(length(pti)>0){
   install.packages(pti)
@@ -9,6 +9,7 @@ Sys.setenv(LANG = "en")
 ## Libraries
 library(shiny)
 library(shinydashboard)
+library(shinyWidgets)
 library(tidyverse)
 library(tidyr)
 library(lubridate)
@@ -115,29 +116,23 @@ body <- dashboardBody(
     tabItem(
       tabName = 'APCvsSTDDC',
       plotOutput('APCvsSTDDCPlot'),
-      selectInput("categoryAPCvsSTDDCInput",
-                  h3("Category"), 
-                  choices = c("All",categories),
-                  selected = categories,
-                  multiple = TRUE
-      ),
-      sliderInput("cpRate",
-                  "Rate",
-                  min = 0,
-                  max = 100,
-                  value = c(0,100),
-                  step = 5,
-                  ticks = FALSE,
-                  sep = "")
+      pickerInput(inputId = "categoryAPCvsSTDDCInput",
+                  label = "Categories",
+                  choices = categories,
+                  multiple = TRUE,
+                  options = list(`actions-box` = TRUE, maxOptions="66"), 
+                  selected = categories
+                  )
     ),
     tabItem(
       tabName = 'APCvsSTDDCC',
       plotOutput('APCvsSTDDCCPlot'),
-      selectInput("categoryAPCvsSTDDCCInput",
-                  h3("Category"), 
-                  choices = c("All",categories),
-                  selected = categories,
-                  multiple = TRUE
+      pickerInput(inputId = "categoryAPCvsSTDDCCInput",
+                  label = "Categories",
+                  choices = categories,
+                  multiple = TRUE,
+                  options = list(`actions-box` = TRUE, maxOptions="66"), 
+                  selected = categories
       )
     ),
     tabItem(
