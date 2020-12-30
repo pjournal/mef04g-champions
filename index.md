@@ -21,6 +21,10 @@
 
 [Rehearsal Video-Youtube Link](https://www.youtube.com/watch?v=sS9beLPvMAQ)
 
+[Fund Performance Comparison Shiny App](https://cagatay.shinyapps.io/tefas-work-2/)
+
+[Detailed Shiny Data Dashboard](https://uguraskar.shinyapps.io/tefas_fund_analysis/)
+
 
 ## Week 04 Group Assignment - ISBike
 
