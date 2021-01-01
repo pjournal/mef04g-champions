@@ -19,7 +19,7 @@ library(DT)
 ##Preparing the data
 
 #setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #Sets the current working directory.
-setwd("C:/Users/ahmet/Desktop/MEF_BDA/BDA-503/Project")
+#setwd("C:/Users/ahmet/Desktop/MEF_BDA/BDA-503/Project")
 df_clean = readRDS('df_clean.rds')
 
 df_price_change = df_clean%>% 
@@ -86,10 +86,11 @@ library(dplyr)
 library(matsindf)
 
 # Dataset
-setwd("C:/Users/ahmet/Desktop/MEF_BDA/BDA-503/Project")
+# setwd("C:/Users/ahmet/Desktop/MEF_BDA/BDA-503/Project")
 df_benchmarking = readRDS("benchmark.rds") 
 df_main = readRDS("df_clean_2.1.rds")
 df_monthly = readRDS("monthly_fund_data.rds")
+
 
 df_benchmarking = df_benchmarking %>%
     mutate(year=year(date), month=month(date)) %>%
@@ -389,7 +390,7 @@ server <- function(input, output, session) {
         ggplot(best_10_all %>%
                    dplyr::filter(name %in% input$Best_10_Funds_Input)   
         )+
-            geom_line(data=best_10_all,aes(x=date, y=price_indexed, color=name),size=1)+
+            geom_line(aes(x=date, y=price_indexed, color=name),size=1)+
             labs(title = 'Most Appreciated Funds in the Last 2.5 Years', x='Date', y='Change')
     })   
     output$mvfTable = DT::renderDT(
