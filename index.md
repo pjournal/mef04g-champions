@@ -23,9 +23,7 @@
 
 [Fund Performance Comparison Shiny App](https://cagatay.shinyapps.io/tefas-work-2/)
 
-[Detailed Shiny Data Dashboard](https://uguraskar.shinyapps.io/tefas_fund_analysis/)
-
-[AES Dashboard](https://ahme.shinyapps.io/Funds_Shinny_Dahsboard/)
+[Detailed Shiny Data Dashboard](https://ahme.shinyapps.io/BDA-503_FUNDS_DASHBOARD/)
 
 [Presentation](https://docs.google.com/presentation/d/1I_IwY2VKhQbqXVK1ZmJZiewrPy8qDphS3qem8DYarVs)
 
